@@ -1,0 +1,17 @@
+#!/bin/sh
+
+{
+  printf "use-application-dns.net\n"
+  curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
+  curl -s https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
+} |
+  tr '[:upper:]' '[:lower:]' |
+  sed -r \
+    -e 's/\r$//' \
+    -e 's/\s*!.*//g' \
+    -e 's/\s*\[.*//g' \
+    -e '/[a-z]\#[$?@]{0,1}\#/d' \
+    -e 's/\s*#.*//g' \
+    -e 's/^.*\s+//g' \
+    -e '/^$/d' |
+  sort -u | awk '{print "local-zone: " $1 " always_null"}' > deny.conf
