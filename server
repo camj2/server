@@ -90,6 +90,7 @@ mkdir -p /mnt/etc/xbps.d
 printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/etc/xbps.d/00-repository-main.conf
 
 {
+  printf "syslog=false\n"
   printf "ignorepkg=linux-headers\n"
   printf "ignorepkg=sudo\n"
 } > /mnt/etc/xbps.d/xbps.conf
