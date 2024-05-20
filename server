@@ -162,13 +162,13 @@ printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$(blkid -o value -s PARTUUID "
 
 {
   printf "\n"
-  printf "%s\n" "ip link set dev eth0 up"
-  printf "%s\n" "ip addr add ${ADDR}/24 brd + dev eth0"
-  printf "%s\n" "ip route add default via ${ROUTE}"
+  printf "ip link set dev eth0 up\n"
+  printf "ip addr add %s/24 brd + dev eth0\n" "$ADDR"
+  printf "ip route add default via %s\n" "$ROUTE"
 
   printf "\n"
-  printf "%s\n" "printf 0 > /sys/class/leds/ACT/brightness"
-  printf "%s\n" "printf 0 > /sys/class/leds/PWR/brightness"
+  printf "printf 0 > /sys/class/leds/ACT/brightness\n"
+  printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /mnt/etc/rc.local
 
 {
