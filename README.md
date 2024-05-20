@@ -107,7 +107,7 @@ wc -l < deny.conf
 Add to rootfs:
 
 ```
-mv -f deny.conf rootfs/etc/unbound/
+mv -f deny.conf rootfs/etc/unbound/unbound.conf.d/
 ```
 
 #### Wireguard
