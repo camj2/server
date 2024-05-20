@@ -2,7 +2,7 @@
 
 set -e
 
-date=$(date -u +%Y-%m-%d_%H%M)
+date=$(date -u +%Y-%m-%d-%H%M)
 
 ZFS_ROOT=$(awk '$2 == "/" && $3 == "zfs" {print $1}' /proc/mounts)
 ZFS_HOME=$(awk '$2 == "/home" && $3 == "zfs" {print $1}' /proc/mounts)
