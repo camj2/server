@@ -1,8 +1,8 @@
 #!/bin/sh
 
-TOKEN=
+TOKEN= # your duckdns token
 
-DOMAIN=
+DOMAIN= # your duckdns subdomain (without .duckdns.org)
 
 req=$(curl -s -m 60 "https://www.duckdns.org/update?domains=${DOMAIN}&token=${TOKEN}&ip=")
 
