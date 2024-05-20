@@ -3,13 +3,13 @@
 set -e
 
 if [ $# -ne 4 ]; then
-  printf "./server /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<sd_card>\n" >&2
+  printf "./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>\n" >&2
   exit 1
 fi
 
-ZONEINFO="$1"
-ROUTE="$2"
-ADDR="$3"
+ROUTE="$1"
+ADDR="$2"
+ZONE="$3"
 SD_CARD="$4"
 
 die() {
@@ -151,7 +151,7 @@ fi
 
 printf "server\n" > /mnt/etc/hostname
 
-ln -sf "$ZONEINFO" /mnt/etc/localtime
+ln -sf "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
 printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf

@@ -142,7 +142,7 @@ rootfs/home/server/.ssh/authorized_keys
 **Warning**: This will completely wipe the USB drive!
 
 ```
-./usb /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<usb_drive>
+./usb <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<usb_drive>
 ```
 
 ### Server
@@ -154,7 +154,7 @@ Check `date` until the clock is correct.
 **Warning**: This will completely wipe the SD card!
 
 ```
-./server /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<sd_card>
+./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
 ```
 
 ## Notes
