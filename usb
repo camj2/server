@@ -2,8 +2,8 @@
 
 set -e
 
-if [ $# -ne 4 ]; then
-  printf "usage: usb <zoneinfo> <ip_address_router> <ip_address> <usb_drive>\n" >&2
+if [ $# -ne 3 ]; then
+  printf "./usb /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<usb_drive>\n" >&2
   exit 1
 fi
 

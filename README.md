@@ -1,6 +1,6 @@
 # server
 
-Consider these the server dotfiles. :)
+Void Linux based Unbound Wireguard server for Raspberry Pi.
 
 Related:
 
@@ -19,14 +19,17 @@ https://github.com/raspberrypi/rpi-eeprom/releases/latest
 
 ### Raspberry Pi 3
 
-Depending on the board revision, you may need to clone the live USB boot partition to an SD card in order to boot via USB.
+Depending on the board revision,
+you may need to clone the live USB boot partition to an SD card in order to boot via USB.
 
-### QEMU
+### `chroot`
+
+This is needed when creating the live USB:
 
 ```
-xbps-install -Su qemu-user-static binfmt-support
+xbps-install -Syu qemu-user-static binfmt-support
 
-ln -s /etc/sv/binfmt-support /var/service/
+ln -sf /etc/sv/binfmt-support /var/service/
 ```
 
 Check:
@@ -35,80 +38,49 @@ Check:
 grep binfmt_misc /proc/mounts
 ```
 
-This is needed when creating the live USB.
-This allows an x86_64 host to chroot into a non x86_64 platform, such as aarch64.
-
-Alternatively you could download Void Linux and setup the USB drive yourself:
-
-https://voidlinux.org/download/#arm%20platforms
-
-If you do, make sure to copy `./rootfs` and `./server` to the USB drive.
-They will be needed later.
-
 ## Configuration
 
 ### Wireguard
 
-#### Proxy
-
-Make sure your network isn't behind a proxy:
+https://portforward.com/
 
 https://ipv4.amibehindaproxy.com/
 
-Otherwise you may need to use [cloudflared](https://github.com/cloudflare/cloudflared).
+<!-- https://github.com/cloudflare/cloudflared -->
 
-#### Port forward
+<!-- https://www.duckdns.org/ -->
 
-Forward UDP port `51820` to the ip address you want to use for your server.
+<!-- https://www.duckdns.org/about.jsp -->
 
-https://portforward.com/
+<!-- https://techoverflow.net/2021/07/09/what-does-wireguard-allowedips-actually-do/ -->
 
-#### Duck DNS
+#### DDNS
 
-https://www.duckdns.org/
-
-Create an account and add your token/subdomain to:
+Create an [account](https://www.duckdns.org/) and add your token/subdomain to:
 
 ```
 rootfs/etc/cron.hourly/duckdns
 ```
 
-Set perms:
-
-```
-chmod 700 rootfs/etc/cron.hourly/duckdns
-```
-
-Learn more: https://www.duckdns.org/about.jsp
-
 #### Peers
 
-<!-- https://techoverflow.net/2021/07/09/what-does-wireguard-allowedips-actually-do/ -->
+<!-- PersistentKeepalive = 25 -->
 
-Generate your peers using `wg-gen`:
+<!-- ListenPort = 51820 -->
+
+<!-- Endpoint -->
+
+Generate peers:
 
 ```
 ./tools/wg-gen <peer_total> <subdomain>
 ```
 
-You can generate between 1-253 peers.
-Make sure to use the same subdomain you added to `rootfs/etc/cron.hourly/duckdns`.
-
-Peers are saved to `./wireguard`.
-Feel free to edit them how you see fit.
-
-Consider adding `PersistentKeepalive = 25` to any peers that are going to be behind a NAT.
-This is not required however.
-
-Move the server peer into the rootfs directory:
+Add to rootfs:
 
 ```
-mv wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
-```
+cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 
-Set perms:
-
-```
 chmod 700 rootfs/etc/wireguard
 ```
 
@@ -118,7 +90,7 @@ chmod 700 rootfs/etc/wireguard
 
 Unbound can block ads standalone. No need for [Pi-hole](https://pi-hole.net/)!
 
-Generate the blocklist using `unbound-deny-gen`:
+Generate the blocklist:
 
 ```
 ./tools/unbound-deny-gen
@@ -132,17 +104,15 @@ Check with:
 wc -l < deny.conf
 ```
 
-Move the blocklist into the rootfs directory:
+Add to rootfs:
 
 ```
-mv deny.conf rootfs/etc/unbound/
+mv -f deny.conf rootfs/etc/unbound/
 ```
 
 #### Wireguard
 
-Consider adding the ip addresses of your peers to `rootfs/etc/unbound/wireguard.conf`.
-
-Example:
+Consider adding the ip addresses of your peers to `rootfs/etc/unbound/wireguard.conf`:
 
 ```
 local-data: "server A 10.1.1.1"
@@ -165,61 +135,27 @@ Add your keys to:
 rootfs/home/server/.ssh/authorized_keys
 ```
 
-This is required as password authentication is disabled by the install script.
-
 ## Installation
 
 ### USB
 
-First step is to create the live USB.
-Use the `usb` install script to create the live USB:
-
 **Warning**: This will completely wipe the USB drive!
 
-Usage:
-
 ```
-./usb <zoneinfo> <ip_address_router> <ip_address> <usb_drive>
-```
-
-Example:
-
-```
-./usb /usr/share/zoneinfo/UTC 10.0.0.1 10.0.0.2 /dev/disk/by-id/<usb_drive>
-```
-
-`10.0.0.1` being the ip address of your router and
-`10.0.0.2` being the ip address you want to use for your server.
-
-Once completed, boot the Pi and connect via SSH:
-
-```
-ssh root@<ip_address> # password: voidlinux
+./usb /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<usb_drive>
 ```
 
 ### Server
 
-Check `date` until the clock is correct.
+Password: `voidlinux`
 
-Once correct, use the `server` install script to create the server:
+Check `date` until the clock is correct.
 
 **Warning**: This will completely wipe the SD card!
 
-Usage:
-
 ```
-./server <zoneinfo> <ip_address_router> <ip_address> <sd_card>
+./server /usr/share/zoneinfo/<timezone> <default_route> <ip_address> /dev/disk/by-id/<sd_card>
 ```
-
-Example:
-
-```
-./server /usr/share/zoneinfo/UTC 10.0.0.1 10.0.0.2 /dev/disk/by-id/<sd_card>
-```
-
-This can take a while since the ZFS DKMS driver needs to be compiled twice.
-
-Once installation is complete, reboot the Pi and remove the live USB.
 
 ## Notes
 
@@ -227,21 +163,13 @@ Once installation is complete, reboot the Pi and remove the live USB.
 
 You can "factory reset" the server at anytime using the base snapshots created at install:
 
-**Warning**: This will wipe all data from the server!
+**Warning**: This will wipe all data from your server!
 
 ```
 zfs rollback -R server/root@base
 zfs rollback -R server/home@base
 
 reboot
-```
-
-### Wireguard
-
-Check with:
-
-```
-wg
 ```
 
 ### Unbound
@@ -253,6 +181,20 @@ Check which nameserver is being used with:
 
 ```
 dig google.com
+```
+
+### Wireguard
+
+Check handshake:
+
+```
+wg
+```
+
+Check endpoint:
+
+```
+dig <subdomain>.duckdns.org
 ```
 
 ## LICENSE
