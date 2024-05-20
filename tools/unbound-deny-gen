@@ -1,7 +1,6 @@
 #!/bin/sh
 
 {
-  printf "use-application-dns.net\n"
   curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
   curl -s https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
 } |
