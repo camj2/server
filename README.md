@@ -19,12 +19,10 @@ https://github.com/raspberrypi/rpi-eeprom/releases/latest
 
 ### Raspberry Pi 3
 
-Depending on the board revision,
+Note: Depending on the board revision,
 you may need to clone the live USB boot partition to an SD card in order to boot via USB.
 
-### `chroot`
-
-This is needed when creating the live USB:
+### QEMU
 
 ```
 xbps-install -Syu qemu-user-static binfmt-support
@@ -32,11 +30,7 @@ xbps-install -Syu qemu-user-static binfmt-support
 ln -sf /etc/sv/binfmt-support /var/service/
 ```
 
-Check:
-
-```
-grep binfmt_misc /proc/mounts
-```
+This is needed when creating the live USB.
 
 ## Configuration
 
