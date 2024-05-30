@@ -29,7 +29,6 @@ if [ $ret -ne 0 ]; then
   # error 16 means xbps needs to be updated
   if [ $ret -eq 16 ]; then
     xbps-install -yu xbps
-
     xbps-install -Syu
   else
     exit $ret
