@@ -40,18 +40,14 @@ function reset_broken_terminal() {
 
 add-zsh-hook -Uz precmd reset_broken_terminal
 
-function clear_screen_and_scrollback() {
-    echoti civis > "$TTY"
-    printf %b '\e[H\e[2J' > "$TTY"
-    zle .reset-prompt
-    zle -R
-    printf %b '\e[3J' > "$TTY"
-    echoti cnorm > "$TTY"
+function clear_screen() {
+    printf '\x1Bc'
+    zle clear-screen
     zle kill-whole-line
 }
 
-zle -N clear_screen_and_scrollback
-bindkey '^L' clear_screen_and_scrollback
+zle -N clear_screen
+bindkey '^L' clear_screen
 
 zle -N up-line-or-beginning-search
 zle -N down-line-or-beginning-search
@@ -74,4 +70,5 @@ alias ls="lsd -A"
 alias lt="lsd -A --tree"
 alias lta="lsd -la --tree"
 
-alias zl="zfs list -t snapshot -s creation -o name,used,creation"
+alias zl="zfs list -t snapshot -s creation -o name,creation"
+alias zu="zfs list -t snapshot -s used -o name,used"
