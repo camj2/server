@@ -91,6 +91,7 @@ printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/e
 
 {
   printf "syslog=false\n"
+  printf "ignorepkg=linux\n"
   printf "ignorepkg=linux-headers\n"
   printf "ignorepkg=sudo\n"
 } > /mnt/etc/xbps.d/xbps.conf
