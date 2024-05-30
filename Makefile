@@ -1,4 +1,4 @@
 all:
-	@./check rootfs tools server usb check
+	@./check rootfs rootfs-zfs server server-zfs usb check tools
 
 .PHONY: all

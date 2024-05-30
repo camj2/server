@@ -1,0 +1,226 @@
+#!/bin/sh
+
+set -e
+
+if [ $# -ne 4 ]; then
+  printf "./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>\n" >&2
+  exit 1
+fi
+
+ROUTE="$1"
+ADDR="$2"
+ZONE="$3"
+SD_CARD="$4"
+
+die() {
+  printf "server: %s\n" "$*" >&2
+  exit 1
+}
+
+if [ "$(uname -m)" != aarch64 ]; then
+  die "unsupported hardware"
+fi
+
+if [ ! -b "$SD_CARD" ]; then
+  die "sd card '$SD_CARD': not found"
+fi
+
+if [ ! -d rootfs ]; then
+  die "directory 'rootfs': not found"
+fi
+
+set -x
+
+# format
+
+xbps-install -Syu zfs
+
+zgenhostid -f
+
+blkdiscard -f "$SD_CARD"
+
+printf ", 512M, c\n," | sfdisk "$SD_CARD"
+
+udevadm settle
+
+mkfs.vfat -F32 "${SD_CARD}-part1"
+
+zpool create \
+  -o ashift=12 \
+  -o autotrim=on \
+  -O atime=off \
+  -O xattr=sa \
+  -O acltype=posix \
+  -O compression=lz4 \
+  -O sync=disabled \
+  -m none server "${SD_CARD}-part2"
+
+zfs create -o mountpoint=/ -o canmount=noauto server/root
+zfs create -o mountpoint=/home server/home
+
+zpool set bootfs=server/root server
+
+zpool export server
+
+# mount
+
+zpool import -N -R /mnt server
+
+zfs mount server/root
+zfs mount server/home
+
+udevadm trigger
+
+mkdir -p /mnt/boot
+mount -o noatime "${SD_CARD}-part1" /mnt/boot
+
+for _fs in dev proc sys; do
+  mkdir -p /mnt/"$_fs"
+  mount --rbind /"$_fs" /mnt/"$_fs"
+  mount --make-rslave /mnt/"$_fs"
+done
+
+mkdir -p /mnt/tmp
+mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
+
+# void
+
+mkdir -p /mnt/etc/xbps.d
+
+printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/etc/xbps.d/00-repository-main.conf
+
+{
+  printf "syslog=false\n"
+  printf "ignorepkg=linux\n"
+  printf "ignorepkg=linux-headers\n"
+  printf "ignorepkg=sudo\n"
+} > /mnt/etc/xbps.d/xbps.conf
+
+mkdir -p /mnt/var/db/xbps/keys
+cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
+
+XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/current/aarch64 -r /mnt \
+  base-system \
+  bat \
+  bind-utils \
+  bottom \
+  cbonsai \
+  chrony \
+  curl \
+  dracut \
+  htop \
+  lsd \
+  nano \
+  neofetch \
+  nftables \
+  nnn \
+  opendoas \
+  pfetch \
+  rng-tools \
+  rpi-firmware \
+  rpi-kernel \
+  rpi-kernel-headers \
+  rsync \
+  runit-nftables \
+  snooze \
+  socklog-void \
+  tree \
+  unbound \
+  vsv \
+  wireguard-tools \
+  zfs \
+  zsh
+
+ln -sf /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/rngd /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/snooze-daily /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/snooze-hourly /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/snooze-monthly /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/snooze-weekly /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/socklog-unix /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/zed /mnt/etc/runit/runsvdir/default/
+
+if [ -f /mnt/etc/default/libc-locales ]; then
+  sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /mnt/etc/default/libc-locales
+  sed -i "/en_US ISO-8859-1/s/^#//g" /mnt/etc/default/libc-locales
+  chroot /mnt /bin/xbps-reconfigure -f glibc-locales
+fi
+
+printf "server\n" > /tmp/server/etc/hostname
+# printf "127.0.0.1 server\n" > /etc/hosts # nano /etc/hosts
+
+ln -sf "$ZONE" /mnt/etc/localtime
+
+mkdir -p /mnt/etc/dracut.conf.d
+printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf
+cp -f /etc/hostid /mnt/etc/
+
+printf "%s\n" "$(sed "s/[[:space:]]/ /g" /mnt/etc/fstab | tr -s " ")" > /mnt/etc/fstab # pretty
+printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$(blkid -o value -s PARTUUID "${SD_CARD}-part1")" >> /mnt/etc/fstab
+
+{
+  printf "\n"
+  printf "ip link set dev eth0 up\n"
+  printf "ip addr add %s/24 brd + dev eth0\n" "$ADDR"
+  printf "ip route add default via %s\n" "$ROUTE"
+
+  printf "\n"
+  printf "printf 0 > /sys/class/leds/ACT/brightness\n"
+  printf "printf 0 > /sys/class/leds/PWR/brightness\n"
+} >> /mnt/etc/rc.local
+
+{
+  printf "nameserver 127.0.0.1\n"
+  printf "nameserver 1.1.1.1\n"
+  printf "nameserver 1.0.0.1\n"
+} > /mnt/etc/resolv.conf
+
+curl -s -o /mnt/etc/unbound/root.hints https://www.internic.net/domain/named.root
+ln -f /mnt/etc/dns/root.key /mnt/etc/unbound/
+
+printf "net.ipv4.ip_forward = 1\n" >> /mnt/etc/sysctl.conf
+
+# user
+
+printf "permit nopass :wheel\n" > /mnt/etc/doas.conf
+
+chroot /mnt /bin/useradd -M -s /bin/zsh -U -G wheel,socklog server
+chroot /mnt /bin/install -d -m 700 -o server -g server /home/server
+
+chroot /mnt /bin/passwd -dl root
+chroot /mnt /bin/passwd -dl server
+
+sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/sshd_config
+sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
+sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
+
+rsync -aAX --chown=root:root rootfs/ /mnt/     # server files
+rsync -aAX --chown=root:root rootfs-zfs/ /mnt/ # server files
+
+chroot /mnt /bin/chown -R server:server /home/server
+chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # make sure permissions are correct
+
+chroot /mnt /bin/xbps-reconfigure -fa
+
+# snapshot
+
+zpool sync
+
+zfs snapshot server/root@base
+zfs snapshot server/home@base
+
+# unmount
+
+umount -R /mnt
+
+zpool sync
+
+udevadm settle
+
+zpool export server
+
+sync

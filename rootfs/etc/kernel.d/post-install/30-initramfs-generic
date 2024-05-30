@@ -1,9 +1,0 @@
-#!/bin/sh
-
-VERSION="$2"
-
-if [ ! -f "boot/initramfs-${VERSION}.img" ]; then
-  exit 1
-fi
-
-printf "initramfs initramfs-%s.img followkernel\n" "$VERSION" > boot/initramfs.txt

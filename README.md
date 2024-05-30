@@ -148,7 +148,7 @@ Check `date` until the clock is correct.
 **Warning**: This will completely wipe the SD card!
 
 ```
-./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
+./server-zfs <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
 ```
 
 ## Notes

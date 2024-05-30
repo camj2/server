@@ -1,25 +1,5 @@
 #!/bin/sh
 
-set -e
-
-date=$(date -u +%Y-%m-%d-%H%M)
-
-ZFS_ROOT=$(awk '$2 == "/" && $3 == "zfs" {print $1}' /proc/mounts)
-ZFS_HOME=$(awk '$2 == "/home" && $3 == "zfs" {print $1}' /proc/mounts)
-
-[ -n "$ZFS_ROOT" ]
-[ -n "$ZFS_HOME" ]
-
-zfs snapshot "$ZFS_ROOT"@update_"$date"
-zfs snapshot "$ZFS_HOME"@update_"$date"
-
-printf "%s\n" "$ZFS_ROOT"@update_"$date"
-printf "%s\n" "$ZFS_HOME"@update_"$date"
-
-mount -o remount,rw /boot
-
-set +e
-
 xbps-install -Syu
 ret=$?
 
@@ -37,16 +17,6 @@ fi
 
 xbps-remove -yo
 xbps-remove -yO
-
-mount -o remount,ro /boot
-
-{
-  zfs list -t snapshot -s creation -o name -H "$ZFS_ROOT" | grep @update_ | head -n -15
-  zfs list -t snapshot -s creation -o name -H "$ZFS_HOME" | grep @update_ | head -n -15
-} |
-  while IFS= read -r snap; do
-    zfs destroy "$snap" || continue
-  done
 
 curl -sS -o /etc/unbound/root.hints https://www.internic.net/domain/named.root
 ln -f /etc/dns/root.key /etc/unbound/
