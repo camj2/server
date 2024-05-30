@@ -1,0 +1,9 @@
+#!/bin/sh
+
+VERSION="$2"
+
+if [ ! -f "boot/initramfs-${VERSION}.img" ]; then
+  exit 1
+fi
+
+find boot -maxdepth 1 -type f -name "initramfs-*.img" ! -name "initramfs-${VERSION}.img" -delete
