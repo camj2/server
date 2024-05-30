@@ -38,8 +38,8 @@ set -x
 # format
 
 if ! blkdiscard -fv "$SD_CARD"; then
-  wipefs -a "${SD_CARD}-part1"
-  wipefs -a "${SD_CARD}-part2"
+  [ -b "${USB}-part1" ] && wipefs -a "${USB}-part1"
+  [ -b "${USB}-part2" ] && wipefs -a "${USB}-part2"
 
   wipefs -fa "$SD_CARD"
 fi
