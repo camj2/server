@@ -4,13 +4,14 @@ set -e
 
 PORT=51820
 
-if [ $# -ne 2 ]; then
-  printf "usage: wg-gen <peer_total> <subdomain>\n" >&2
+if [ $# -ne 3 ]; then
+  printf "usage: wg-gen <peer_total> <address_block> <duckdns_subdomain>\n" >&2
   exit 1
 fi
 
 PEER_TOTAL="$1"
-DUCK="$2"
+BLOCK="$2"
+DUCK="$3"
 
 ENDPOINT="${DUCK}.duckdns.org:${PORT}"
 
@@ -48,7 +49,7 @@ SERVER_PUB=$(printf %s "$SERVER_KEY" | wg pubkey)
 
 {
   printf "%s\n" "[Interface]"
-  printf "%s\n" "Address = 10.1.1.1/24"
+  printf "%s\n" "Address = ${BLOCK}.1/24"
   printf "%s\n" "ListenPort = ${PORT}"
   printf "%s\n" "PrivateKey = ${SERVER_KEY}"
 } > 1-server.conf
@@ -68,14 +69,14 @@ for peer in $(seq "$PEER_TOTAL"); do
     printf "%s\n" "[Peer]"
     printf "%s\n" "PublicKey = ${PEER_PUB}"
     printf "%s\n" "PresharedKey = ${PSK}"
-    printf "%s\n" "AllowedIPs = 10.1.1.${peer}/32"
+    printf "%s\n" "AllowedIPs = ${BLOCK}.${peer}/32"
   } >> 1-server.conf
 
   {
     printf "%s\n" "[Interface]"
-    printf "%s\n" "Address = 10.1.1.${peer}/32"
+    printf "%s\n" "Address = ${BLOCK}.${peer}/32"
     printf "%s\n" "PrivateKey = ${PEER_KEY}"
-    printf "%s\n" "DNS = 10.1.1.1"
+    printf "%s\n" "DNS = ${BLOCK}.1"
 
     printf "\n"
 
@@ -83,7 +84,7 @@ for peer in $(seq "$PEER_TOTAL"); do
     printf "%s\n" "PublicKey = ${SERVER_PUB}"
     printf "%s\n" "PresharedKey = ${PSK}"
     printf "%s\n" "Endpoint = ${ENDPOINT}"
-    printf "%s\n" "AllowedIPs = 10.1.1.0/24"
+    printf "%s\n" "AllowedIPs = ${BLOCK}.0/24"
   } > "$peer".conf
 
   qrencode -r "$peer".conf -o "$peer".png

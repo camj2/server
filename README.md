@@ -66,8 +66,10 @@ rootfs/etc/cron.hourly/duckdns
 
 Generate peers:
 
+<!-- https://en.wikipedia.org/wiki/Reserved_IP_addresses -->
+
 ```
-./tools/wg-gen <peer_total> <subdomain>
+./tools/wg-gen <peer_total> <address_block> <duckdns_subdomain> # recommended address block: 10.1.1
 ```
 
 Add to rootfs:
