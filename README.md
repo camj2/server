@@ -72,8 +72,6 @@ Generate peers:
 ./tools/wg-gen <peer_total> <address_block> <duckdns_subdomain> # example address block: 10.1.1
 ```
 
-Note: Consider using something from the `172.16.0.0/12` address range for the address block.
-
 Add to rootfs:
 
 ```
