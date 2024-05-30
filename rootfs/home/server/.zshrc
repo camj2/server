@@ -32,6 +32,12 @@ key[Control-Right]='^[[1;5C'
 bindkey "${key[Control-Left]}" backward-word
 bindkey "${key[Control-Right]}" forward-word
 
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+
+bindkey "${key[Up]}" up-line-or-beginning-search
+bindkey "${key[Down]}" down-line-or-beginning-search
+
 PS1='%B%F{cyan}%n@%M %F{blue}%~ $%b%f '
 
 function reset_broken_terminal() {
@@ -48,12 +54,6 @@ function clear_screen() {
 
 zle -N clear_screen
 bindkey '^L' clear_screen
-
-zle -N up-line-or-beginning-search
-zle -N down-line-or-beginning-search
-
-bindkey "${key[Up]}" up-line-or-beginning-search
-bindkey "${key[Down]}" down-line-or-beginning-search
 
 alias sudo=doas
 
