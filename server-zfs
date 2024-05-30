@@ -202,9 +202,16 @@ rsync -aAX --chown=root:root rootfs/ /mnt/     # server files
 rsync -aAX --chown=root:root rootfs-zfs/ /mnt/ # server files
 
 chroot /mnt /bin/chown -R server:server /home/server
-chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # make sure permissions are correct
 
 chroot /mnt /bin/xbps-reconfigure -fa
+
+# hide
+
+for _x in /mnt/home/server /mnt/home/server/.ssh /mnt/etc/wireguard /mnt/etc/cron.hourly/duckdns; do
+  if [ -e "$_x" ]; then
+    chmod 700 "$_x"
+  fi
+done
 
 # snapshot
 

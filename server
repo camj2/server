@@ -189,9 +189,16 @@ rsync -aAX --chown=root:root rootfs/ /tmp/server/ # server files
 sed -i "s/%PLACEHOLDER%/PARTUUID=${ROOTFS}/g" /tmp/server/boot/cmdline.txt # fstab
 
 chroot /tmp/server /bin/chown -R server:server /home/server
-chroot /tmp/server /bin/chmod 700 /home/server /home/server/.ssh # make sure permissions are correct
 
 chroot /tmp/server /bin/xbps-reconfigure -fa
+
+# hide
+
+for _x in /mnt/home/server /mnt/home/server/.ssh /mnt/etc/wireguard /mnt/etc/cron.hourly/duckdns; do
+  if [ -e "$_x" ]; then
+    chmod 700 "$_x"
+  fi
+done
 
 # unmount
 

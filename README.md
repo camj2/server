@@ -69,15 +69,15 @@ Generate peers:
 <!-- https://en.wikipedia.org/wiki/Reserved_IP_addresses -->
 
 ```
-./tools/wg-gen <peer_total> <address_block> <duckdns_subdomain> # recommended address block: 10.1.1
+./tools/wg-gen <peer_total> <address_block> <duckdns_subdomain> # example address block: 10.1.1
 ```
+
+Note: Consider using something from the `172.16.0.0/12` address range for the address block.
 
 Add to rootfs:
 
 ```
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
-
-chmod 700 rootfs/etc/wireguard
 ```
 
 ### Unbound
