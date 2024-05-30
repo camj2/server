@@ -150,7 +150,8 @@ if [ -f /mnt/etc/default/libc-locales ]; then
   chroot /mnt /bin/xbps-reconfigure -f glibc-locales
 fi
 
-printf "server\n" > /mnt/etc/hostname
+printf "server\n" > /tmp/server/etc/hostname
+# printf "127.0.0.1 server\n" > /etc/hosts # nano /etc/hosts
 
 ln -sf "$ZONE" /mnt/etc/localtime
 
