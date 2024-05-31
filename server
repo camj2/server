@@ -136,7 +136,6 @@ if [ -f /tmp/server/etc/default/libc-locales ]; then
 fi
 
 printf "server\n" > /tmp/server/etc/hostname
-# printf "127.0.0.1 server\n" > /etc/hosts # nano /etc/hosts
 
 ln -sf "$ZONE" /tmp/server/etc/localtime
 
