@@ -96,6 +96,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   chrony \
   curl \
   htop \
+  inadyn \
   lsd \
   nano \
   neofetch \
@@ -168,6 +169,7 @@ curl -s -o /tmp/server/etc/unbound/root.hints https://www.internic.net/domain/na
 ln -f /tmp/server/etc/dns/root.key /tmp/server/etc/unbound/
 
 printf "net.ipv4.ip_forward = 1\n" >> /tmp/server/etc/sysctl.conf
+printf "net.ipv6.conf.all.forwarding = 1\n" >> /tmp/server/etc/sysctl.conf
 
 # user
 
@@ -188,16 +190,20 @@ rsync -aAX --chown=root:root rootfs/ /tmp/server/ # server files
 sed -i "s/%PLACEHOLDER%/PARTUUID=${ROOTFS}/g" /tmp/server/boot/cmdline.txt # fstab
 
 chroot /tmp/server /bin/chown -R server:server /home/server
+chroot /tmp/server /bin/chmod 700 /home/server /home/server/.ssh # make sure permissions are correct
 
 chroot /tmp/server /bin/xbps-reconfigure -fa
 
-# hide
+# wireguard
 
-for _x in /mnt/home/server /mnt/home/server/.ssh /mnt/etc/wireguard /mnt/etc/cron.hourly/duckdns; do
-  if [ -e "$_x" ]; then
-    chmod 700 "$_x"
-  fi
-done
+chroot /tmp/server /bin/chmod 700 /etc/wireguard # make sure permissions are correct
+
+# inadyn
+
+chroot /tmp/server /bin/mkdir -p /var/cache/inadyn
+chroot /tmp/server /bin/chown inadyn:inadyn /var/cache/inadyn
+chroot /tmp/server /bin/chown inadyn:inadyn /etc/inadyn.conf
+chroot /tmp/server /bin/chmod 600 /etc/inadyn.conf
 
 # unmount
 

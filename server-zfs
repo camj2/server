@@ -109,6 +109,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   curl \
   dracut \
   htop \
+  inadyn \
   lsd \
   nano \
   neofetch \
@@ -150,7 +151,7 @@ if [ -f /mnt/etc/default/libc-locales ]; then
   chroot /mnt /bin/xbps-reconfigure -f glibc-locales
 fi
 
-printf "server\n" > /tmp/server/etc/hostname
+printf "server\n" > /mnt/etc/hostname
 
 ln -sf "$ZONE" /mnt/etc/localtime
 
@@ -182,6 +183,7 @@ curl -s -o /mnt/etc/unbound/root.hints https://www.internic.net/domain/named.roo
 ln -f /mnt/etc/dns/root.key /mnt/etc/unbound/
 
 printf "net.ipv4.ip_forward = 1\n" >> /mnt/etc/sysctl.conf
+printf "net.ipv6.conf.all.forwarding = 1\n" >> /mnt/etc/sysctl.conf
 
 # user
 
@@ -201,16 +203,20 @@ rsync -aAX --chown=root:root rootfs/ /mnt/     # server files
 rsync -aAX --chown=root:root rootfs-zfs/ /mnt/ # server files
 
 chroot /mnt /bin/chown -R server:server /home/server
+chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # make sure permissions are correct
 
 chroot /mnt /bin/xbps-reconfigure -fa
 
-# hide
+# wireguard
 
-for _x in /mnt/home/server /mnt/home/server/.ssh /mnt/etc/wireguard /mnt/etc/cron.hourly/duckdns; do
-  if [ -e "$_x" ]; then
-    chmod 700 "$_x"
-  fi
-done
+chroot /mnt /bin/chmod 700 /etc/wireguard # make sure permissions are correct
+
+# inadyn
+
+chroot /mnt /bin/mkdir -p /var/cache/inadyn
+chroot /mnt /bin/chown inadyn:inadyn /var/cache/inadyn
+chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf
+chroot /mnt /bin/chmod 600 /etc/inadyn.conf
 
 # snapshot
 

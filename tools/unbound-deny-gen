@@ -1,8 +1,12 @@
 #!/bin/sh
 
+set -e
+
+# mkdir -p /etc/unbound/unbound.conf.d
+
 {
-  curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
-  curl -s https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
+  curl -sS https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
+  curl -sS https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
 } |
   tr '[:upper:]' '[:lower:]' |
   sed -r \
@@ -14,3 +18,5 @@
     -e 's/^.*\s+//g' \
     -e '/^$/d' |
   sort -u | awk '{print "local-zone: " $1 " always_null"}' > deny.conf
+
+wc -l < deny.conf

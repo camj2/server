@@ -9,7 +9,7 @@ Related:
 * ZFS
 * Unbound
 * Wireguard
-* [Duck DNS](https://www.duckdns.org/)
+* [Cloudflare](https://www.cloudflare.com/)
 
 ## Prerequisites
 
@@ -40,21 +40,43 @@ https://portforward.com/
 
 https://ipv4.amibehindaproxy.com/
 
-<!-- https://github.com/cloudflare/cloudflared -->
-
-<!-- https://www.duckdns.org/ -->
-
-<!-- https://www.duckdns.org/about.jsp -->
-
 <!-- https://techoverflow.net/2021/07/09/what-does-wireguard-allowedips-actually-do/ -->
+
+Use [`cloudflared`](https://github.com/cloudflare/cloudflared)
+instead of `inadyn` if your network is behind a proxy.
 
 #### DDNS
 
-Create an [account](https://www.duckdns.org/) and add your token/subdomain to:
+<!-- https://www.namecheap.com/ -->
+
+<!-- https://www.cloudflare.com/ -->
+
+<!-- https://developers.cloudflare.com/dns/dnssec/#enable-dnssec -->
+
+<!-- https://github.com/troglobit/inadyn -->
+
+Create a new subdomain for your server and create an `inadyn` configuration file:
+
+`rootfs/etc/inadyn.conf`:
+
+```
+period = 3600
+user-agent = Mozilla/5.0
+
+provider cloudflare.com {
+    username = <domain>
+    password = <token>
+    hostname = <subdomain>.<domain>
+    ttl = 1
+    proxied = false
+}
+```
+
+<!-- Create an [account](https://www.duckdns.org/) and add your token/subdomain to:
 
 ```
 rootfs/etc/cron.hourly/duckdns
-```
+``` -->
 
 #### Peers
 
@@ -64,18 +86,43 @@ rootfs/etc/cron.hourly/duckdns
 
 <!-- Endpoint -->
 
-Generate peers:
+Generate:
 
 <!-- https://en.wikipedia.org/wiki/Reserved_IP_addresses -->
 
+<!-- https://unique-local-ipv6.com/ -->
+
+<!-- https://www.ibm.com/docs/en/ts3500-tape-library?topic=formats-subnet-masks-ipv4-prefixes-ipv6#d78581e83 -->
+
 ```
-./tools/wg-gen <peer_total> <address_block> <duckdns_subdomain> # example address block: 10.1.1
+./tools/wg-gen -t <peer_total> -p 51820 <endpoint>
 ```
 
-Add to rootfs:
+Add:
 
 ```
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
+
+cp -f wireguard/unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf # wireguard peers
+```
+
+Make sure to edit `wireguard.conf` and add the names of all your peers:
+
+```
+local-data: "server AAAA fd87:9b28:1e2f:b635::1"
+local-data: "phone AAAA fd87:9b28:1e2f:b635::2"
+local-data: "laptop AAAA fd87:9b28:1e2f:b635::3"
+local-data: "computer AAAA fd87:9b28:1e2f:b635::4"
+local-data: "backup AAAA fd87:9b28:1e2f:b635::5"
+```
+
+<!-- local-data-ptr: "fd87:9b28:1e2f:b635::1 server" -->
+<!-- private-domain: server -->
+
+Usage:
+
+```
+ssh server@server # fd87:9b28:1e2f:b635::1
 ```
 
 ### Unbound
@@ -98,29 +145,11 @@ Check with:
 wc -l < deny.conf
 ```
 
-Add to rootfs:
+Add:
 
 ```
 mv -f deny.conf rootfs/etc/unbound/unbound.conf.d/
 ```
-
-#### Wireguard
-
-Consider adding the ip addresses of your peers to `rootfs/etc/unbound/wireguard.conf`:
-
-```
-local-data: "server A 10.1.1.1"
-local-data: "phone A 10.1.1.2"
-local-data: "laptop A 10.1.1.3"
-local-data: "computer A 10.1.1.4"
-```
-
-This makes it easy to ssh between your peers:
-
-```
-ssh laptop # connect to 10.1.1.3
-```
-
 ### SSH
 
 Add your keys to:
@@ -139,6 +168,9 @@ rootfs/home/server/.ssh/authorized_keys
 ./usb <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<usb_drive>
 ```
 
+<!-- default_route = router ipv4 address -->
+<!-- ip_address = server ipv4 address -->
+
 ### Server
 
 Password: `voidlinux`
@@ -150,6 +182,9 @@ Check `date` until the clock is correct.
 ```
 ./server-zfs <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
 ```
+
+<!-- default_route = router ipv4 address -->
+<!-- ip_address = server ipv4 address -->
 
 ## Notes
 
@@ -168,14 +203,20 @@ reboot
 
 ### Unbound
 
-You can use [dnscheck.tools](https://dnscheck.tools/) to test Unbound.
-This should print the name of your internet service provider.
-
-Check which nameserver is being used with:
+Check with:
 
 ```
-dig google.com
+dig @server google.com
 ```
+
+Check DNSSEC with:
+
+```
+dig fail01.dnssec.works @server -p 53 # SERVFAIL
+dig dnssec.works @server -p 53 # NOERROR
+```
+
+https://dnscheck.tools/
 
 ### Wireguard
 

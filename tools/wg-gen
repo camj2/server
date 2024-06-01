@@ -2,90 +2,164 @@
 
 set -e
 
+# default
+
+PEER_TOTAL=1
 PORT=51820
+UNBOUND=1 # always generate unbound.conf file
 
-if [ $# -ne 3 ]; then
-  printf "usage: wg-gen <peer_total> <address_block> <duckdns_subdomain>\n" >&2
-  exit 1
-fi
+check() {
+  # options
 
-PEER_TOTAL="$1"
-BLOCK="$2"
-DUCK="$3"
+  if [ -z "$ENDPOINT" ]; then
+    die "endpoint required"
+  fi
 
-ENDPOINT="${DUCK}.duckdns.org:${PORT}"
+  if [ -z "$PORT" ]; then
+    die "port required"
+  fi
+
+  if [ -z "$PEER_TOTAL" ]; then
+    die "peer total required"
+  fi
+
+  if [ "$PEER_TOTAL" -ge 65535 ]; then
+    die "peer total cannot exceed 65535" # ffff
+  fi
+
+  # installed
+
+  if ! command -v wg > /dev/null; then
+    die "wireguard-tools not installed"
+  fi
+
+  if ! command -v qrencode > /dev/null; then
+    die "qrencode not installed"
+  fi
+
+  # output
+
+  if [ -e wireguard ]; then
+    die "directory 'wireguard': already exists"
+  fi
+}
+
+gen_subnet() {
+  num1=$(openssl rand -hex 1) # 0-255
+  num2=$(openssl rand -hex 2) # 0-65535
+  num3=$(openssl rand -hex 2) # 0-65535
+  num4=$(openssl rand -hex 2) # 0-65535
+
+  # printf 'fd%02x:%04x:%04x:%04x::\n' "$num1" "$num2" "$num3" "$num4"
+  printf 'fd%s:%s:%s:%s::\n' "$num1" "$num2" "$num3" "$num4"
+}
+
+gen_addr() {
+  printf '%s%x\n' "$SUBNET" "$1"
+
+  if [ -n "$UNBOUND" ]; then
+    printf 'local-data: "peer-%s AAAA %s%x"\n' "$1" "$SUBNET" "$1" >> unbound.conf
+  fi
+}
+
+gen_peers() {
+  # output
+
+  install -d -m 700 wireguard
+
+  cd wireguard
+
+  # server peer
+
+  SERVER_KEY=$(wg genkey)
+  SERVER_PUB=$(printf %s "$SERVER_KEY" | wg pubkey)
+
+  SERVER_ADDR=$(gen_addr 1)
+
+  {
+    printf "%s\n" "[Interface]"
+    printf "%s\n" "PrivateKey = ${SERVER_KEY}"
+    printf "%s\n" "Address = ${SERVER_ADDR}/64"
+    printf "%s\n" "ListenPort = ${PORT}"
+  } > 1-server.conf
+
+  # client peers
+
+  for peer in $(seq "$1"); do
+    peer=$((peer + 1))
+
+    PEER_KEY=$(wg genkey)
+    PEER_PUB=$(printf %s "$PEER_KEY" | wg pubkey)
+
+    PSK=$(wg genpsk)
+
+    PEER_ADDR=$(gen_addr "$peer")
+
+    {
+      printf "\n"
+      printf "%s\n" "[Peer]"
+      printf "%s\n" "PublicKey = ${PEER_PUB}"
+      printf "%s\n" "PresharedKey = ${PSK}"
+      printf "%s\n" "AllowedIPs = ${PEER_ADDR}/128"
+    } >> 1-server.conf
+
+    {
+      printf "%s\n" "[Interface]"
+      printf "%s\n" "PrivateKey = ${PEER_KEY}"
+      printf "%s\n" "Address = ${PEER_ADDR}/128"
+      printf "%s\n" "DNS = ${SERVER_ADDR}"
+
+      printf "\n"
+
+      printf "%s\n" "[Peer]"
+      printf "%s\n" "PublicKey = ${SERVER_PUB}"
+      printf "%s\n" "PresharedKey = ${PSK}"
+      printf "%s\n" "AllowedIPs = ${SUBNET}/64"
+      printf "%s\n" "Endpoint = ${ENDPOINT}:${PORT}"
+    } > "$peer".conf
+
+    qrencode -r "$peer".conf -o "$peer".png
+  done
+}
+
+usage() {
+  RST='\033[0;00m'
+  GRN='\033[0;32m'
+  YLW='\033[0;33m'
+
+  printf "%b\n" "${YLW}USAGE${RST}:"
+  printf "%s\n" "    wg-gen [OPTIONS] <endpoint>"
+  printf "\n"
+  printf "%b\n" "${YLW}OPTIONS${RST}:"
+  printf "%b\n" "    ${GRN}-t <peer_total>${RST}    Total number of peers to generate (default: 1)"
+  printf "%b\n" "    ${GRN}-p <port>${RST}          Listening port (default: 51820)"
+  printf "%b\n" "    ${GRN}-u${RST}                 Generate unbound.conf file"
+
+  exit 0
+}
 
 die() {
   printf "wg-gen: %s\n" "$*" >&2
   exit 1
 }
 
-# check
-
-if ! command -v wg > /dev/null; then
-  die "wireguard-tools not installed"
-fi
-
-if ! command -v qrencode > /dev/null; then
-  die "qrencode not installed"
-fi
-
-if [ "$PEER_TOTAL" -gt 253 ]; then
-  die "peer total cannot exceed 253"
-fi
-
-if [ -e wireguard ]; then
-  die "directory 'wireguard': already exists"
-fi
-
-# server
-
-install -d -m 700 wireguard
-
-cd wireguard
-
-SERVER_KEY=$(wg genkey)
-SERVER_PUB=$(printf %s "$SERVER_KEY" | wg pubkey)
-
-{
-  printf "%s\n" "[Interface]"
-  printf "%s\n" "Address = ${BLOCK}.1/24"
-  printf "%s\n" "ListenPort = ${PORT}"
-  printf "%s\n" "PrivateKey = ${SERVER_KEY}"
-} > 1-server.conf
-
-# peers
-
-for peer in $(seq "$PEER_TOTAL"); do
-  peer=$((peer + 1))
-
-  PEER_KEY=$(wg genkey)
-  PEER_PUB=$(printf %s "$PEER_KEY" | wg pubkey)
-
-  PSK=$(wg genpsk)
-
-  {
-    printf "\n"
-    printf "%s\n" "[Peer]"
-    printf "%s\n" "PublicKey = ${PEER_PUB}"
-    printf "%s\n" "PresharedKey = ${PSK}"
-    printf "%s\n" "AllowedIPs = ${BLOCK}.${peer}/32"
-  } >> 1-server.conf
-
-  {
-    printf "%s\n" "[Interface]"
-    printf "%s\n" "Address = ${BLOCK}.${peer}/32"
-    printf "%s\n" "PrivateKey = ${PEER_KEY}"
-    printf "%s\n" "DNS = ${BLOCK}.1"
-
-    printf "\n"
-
-    printf "%s\n" "[Peer]"
-    printf "%s\n" "PublicKey = ${SERVER_PUB}"
-    printf "%s\n" "PresharedKey = ${PSK}"
-    printf "%s\n" "Endpoint = ${ENDPOINT}"
-    printf "%s\n" "AllowedIPs = ${BLOCK}.0/24"
-  } > "$peer".conf
-
-  qrencode -r "$peer".conf -o "$peer".png
+while getopts :t:e:p:hu opt; do
+  case $opt in
+    h) usage ;;
+    t) PEER_TOTAL="$OPTARG" ;;
+    p) PORT="$OPTARG" ;;
+    u) UNBOUND=1 ;;
+    *) die "unknown option" ;;
+  esac
 done
+
+shift $((OPTIND - 1))
+OPTIND=1
+
+ENDPOINT="$1"
+
+check
+
+SUBNET=$(gen_subnet)
+
+gen_peers "$PEER_TOTAL"
