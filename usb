@@ -49,11 +49,11 @@ printf ", 512M, c\n," | sfdisk "$USB"
 
 udevadm settle
 
-mkfs.vfat -F32 "${USB}-part1"
-mkfs.ext4 "${USB}-part2"
-
 BOOTFS=$(blkid -o value -s PARTUUID "${USB}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${USB}-part2")
+
+mkfs.vfat -F32 "${USB}-part1"
+mkfs.ext4 "${USB}-part2"
 
 # mount
 
@@ -107,6 +107,8 @@ ln -sf /etc/sv/sshd /tmp/server/etc/runit/runsvdir/default/
 
 sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /tmp/server/etc/ssh/sshd_config
 
+chroot /tmp/server /bin/chsh -s /bin/bash
+
 printf "root:voidlinux\n" | chroot /tmp/server /bin/chpasswd -c SHA512
 
 printf "server\n" > /tmp/server/etc/hostname
@@ -140,8 +142,7 @@ printf "disable_splash=1\n" >> /tmp/server/boot/config.txt
 
 # copy
 
-rsync -aAX --chown=root:root ./rootfs* /tmp/server/root/ # server files
-rsync -aAX --chown=root:root ./server* /tmp/server/root/ # install script
+rsync -aAX --chown=root:root ./* /tmp/server/root/ # server files
 
 # unmount
 
