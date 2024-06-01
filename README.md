@@ -111,7 +111,7 @@ Add:
 ```
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 
-cp -f wireguard/unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf # wireguard peers
+cp -f wireguard/0-unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf # wireguard peers
 ```
 
 Make sure to edit `wireguard.conf` and add the names of all your peers:
