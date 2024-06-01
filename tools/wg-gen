@@ -24,6 +24,7 @@ check() {
     die "peer total required"
   fi
 
+  # TO-DO - allow more than 65535 peers
   if [ "$PEER_TOTAL" -ge 65535 ]; then
     die "peer total cannot exceed 65535" # ffff
   fi
@@ -149,6 +150,7 @@ die() {
   exit 1
 }
 
+# TO-DO - add ipv4 '-4' option
 while getopts :t:e:p:hru opt; do
   case $opt in
     h) usage ;;
