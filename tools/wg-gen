@@ -6,6 +6,7 @@ set -e
 
 PEER_TOTAL=1
 PORT=51820
+RANGE=1
 UNBOUND=1 # always generate unbound.conf file
 
 check() {
@@ -114,7 +115,11 @@ gen_peers() {
       printf "%s\n" "[Peer]"
       printf "%s\n" "PublicKey = ${SERVER_PUB}"
       printf "%s\n" "PresharedKey = ${PSK}"
-      printf "%s\n" "AllowedIPs = ${SUBNET}/64"
+      if [ -n "$RANGE" ]; then
+        printf "%s\n" "AllowedIPs = ${SUBNET}/64"
+      else
+        printf "%s\n" "AllowedIPs = ${SERVER_ADDR}/128"
+      fi
       printf "%s\n" "Endpoint = ${ENDPOINT}:${PORT}"
     } > "$peer".conf
 
@@ -133,6 +138,7 @@ usage() {
   printf "%b\n" "${YLW}OPTIONS${RST}:"
   printf "%b\n" "    ${GRN}-t <peer_total>${RST}    Total number of peers to generate (default: 1)"
   printf "%b\n" "    ${GRN}-p <port>${RST}          Listening port (default: 51820)"
+  printf "%b\n" "    ${GRN}-n${RST}                 Only allow /128 instead of /64"
   printf "%b\n" "    ${GRN}-u${RST}                 Generate unbound.conf file"
 
   exit 0
@@ -143,11 +149,12 @@ die() {
   exit 1
 }
 
-while getopts :t:e:p:hu opt; do
+while getopts :t:e:p:hnu opt; do
   case $opt in
     h) usage ;;
     t) PEER_TOTAL="$OPTARG" ;;
     p) PORT="$OPTARG" ;;
+    n) RANGE= ;;
     u) UNBOUND=1 ;;
     *) die "unknown option" ;;
   esac

@@ -95,8 +95,14 @@ Generate:
 <!-- https://www.ibm.com/docs/en/ts3500-tape-library?topic=formats-subnet-masks-ipv4-prefixes-ipv6#d78581e83 -->
 
 ```
-./tools/wg-gen -t <peer_total> -p 51820 <endpoint>
+./tools/wg-gen -t <peer_total> <endpoint>
 ```
+
+<!-- Share with friends:
+
+```
+./tools/wg-gen -n -t <peer_total> -p 51821 <endpoint>
+``` -->
 
 Add:
 
