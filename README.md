@@ -250,6 +250,12 @@ Check endpoint:
 dig <subdomain>.duckdns.org
 ```
 
+### Password
+
+```
+passwd server # optional
+```
+
 ## LICENSE
 
 MIT
