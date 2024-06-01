@@ -6,8 +6,8 @@ set -e
 
 PEER_TOTAL=1
 PORT=51820
-RANGE=1
-UNBOUND=1 # always generate unbound.conf file
+RANGE=
+UNBOUND=
 
 check() {
   # options
@@ -138,7 +138,7 @@ usage() {
   printf "%b\n" "${YLW}OPTIONS${RST}:"
   printf "%b\n" "    ${GRN}-t <peer_total>${RST}    Total number of peers to generate (default: 1)"
   printf "%b\n" "    ${GRN}-p <port>${RST}          Listening port (default: 51820)"
-  printf "%b\n" "    ${GRN}-n${RST}                 Only allow /128 instead of /64"
+  printf "%b\n" "    ${GRN}-r${RST}                 Allow entire /64 subnet instead of just /128"
   printf "%b\n" "    ${GRN}-u${RST}                 Generate unbound.conf file"
 
   exit 0
@@ -149,12 +149,12 @@ die() {
   exit 1
 }
 
-while getopts :t:e:p:hnu opt; do
+while getopts :t:e:p:hru opt; do
   case $opt in
     h) usage ;;
     t) PEER_TOTAL="$OPTARG" ;;
     p) PORT="$OPTARG" ;;
-    n) RANGE= ;;
+    r) RANGE=1 ;;
     u) UNBOUND=1 ;;
     *) die "unknown option" ;;
   esac
