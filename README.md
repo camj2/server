@@ -127,6 +127,12 @@ local-data: "backup AAAA fd87:9b28:1e2f:b635::5"
 <!-- local-data-ptr: "fd87:9b28:1e2f:b635::1 server" -->
 <!-- private-domain: server -->
 
+Test:
+
+```
+dig +short server AAAA
+```
+
 This makes it easy to ssh between your peers:
 
 ```
