@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# https://www.duckdns.org/
+
+TOKEN=
+
+DOMAIN= # without ".duckdns.org"
+
+req=$(curl -s -m 60 "https://www.duckdns.org/update?domains=${DOMAIN}&token=${TOKEN}&ip=")
+
+if [ "$req" != OK ]; then
+  logger -t duckdns -p daemon.err failed
+  exit 1
+fi
