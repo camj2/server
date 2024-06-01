@@ -129,6 +129,7 @@ ln -sf /etc/sv/socklog-unix /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/unbound /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /tmp/server/etc/runit/runsvdir/default/
+ln -sf /etc/sv/inadyn /tmp/server/etc/runit/runsvdir/default/
 
 if [ -f /tmp/server/etc/default/libc-locales ]; then
   sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /tmp/server/etc/default/libc-locales

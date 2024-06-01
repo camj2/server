@@ -143,6 +143,7 @@ ln -sf /etc/sv/socklog-unix /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/inadyn /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/zed /mnt/etc/runit/runsvdir/default/
 
 if [ -f /mnt/etc/default/libc-locales ]; then
