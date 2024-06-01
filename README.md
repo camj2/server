@@ -98,62 +98,10 @@ Generate:
 ./tools/wg-gen -t <peer_total> <endpoint>
 ```
 
-<!-- Share with friends:
+<!-- Shared:
 
 ```
 ./tools/wg-gen -n -t <peer_total> -p 51821 <endpoint>
-```
-
-Dual wireguard interface and shared peers only have access to port 53:
-
-```
-flush ruleset
-
-table inet filter {
-  chain input {
-    type filter hook input priority 0
-    policy drop
-
-    ct state established,related accept
-    ct state invalid drop
-
-    iif lo accept
-  
-    iifname wg1 goto {
-      tcp dport 53 accept
-      udp dport 53 accept
-    }
-
-    tcp dport 22 accept
-
-    tcp dport 53 accept
-    udp dport 53 accept
-
-    udp dport 51820 accept
-    udp dport 51821 accept
-
-    ip protocol icmp accept
-    ip6 nexthdr icmpv6 accept
-  }
-
-  chain forward {
-    type filter hook forward priority 0
-    policy drop
-
-    ct state established,related accept
-    ct state invalid drop
-
-    iifname wg0 accept
-  }
-}
-
-table inet nat {
-  chain postrouting {
-    type nat hook postrouting priority 100
-
-    iifname wg0 oifname != wg0 masquerade
-  }
-}
 ``` -->
 
 Add:
