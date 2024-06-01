@@ -140,10 +140,6 @@ printf "server\n" > /tmp/server/etc/hostname
 
 ln -sf "$ZONE" /tmp/server/etc/localtime
 
-mkdir -p /tmp/server/etc/dracut.conf.d
-printf 'add_dracutmodules+=" zfs "\n' > /tmp/server/etc/dracut.conf.d/zfs.conf
-cp -f /etc/hostid /tmp/server/etc/
-
 printf "%s\n" "$(sed "s/[[:space:]]/ /g" /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
 printf "PARTUUID=%s / ext4 noatime 0 1\n" "$ROOTFS" >> /tmp/server/etc/fstab
 printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS" >> /tmp/server/etc/fstab
