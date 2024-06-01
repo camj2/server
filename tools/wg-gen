@@ -58,7 +58,7 @@ gen_addr() {
   printf '%s%x\n' "$SUBNET" "$1"
 
   if [ -n "$UNBOUND" ]; then
-    printf 'local-data: "%s AAAA %s%x"\n' "$1" "$SUBNET" "$1" >> unbound.conf
+    printf 'local-data: "%s AAAA %s%x"\n' "$1" "$SUBNET" "$1" >> 0-unbound.conf
   fi
 }
 
