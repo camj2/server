@@ -180,6 +180,15 @@ rootfs/home/server/.ssh/authorized_keys
 
 ## Installation
 
+First fix permissions:
+
+```
+chmod 700 rootfs/home/server
+chmod 700 rootfs/home/server/.ssh
+chmod 700 rootfs/etc/wireguard
+chmod 600 rootfs/etc/inadyn.conf
+```
+
 ### USB
 
 **Warning**: This will completely wipe the USB drive!
