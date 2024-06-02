@@ -36,6 +36,8 @@ This is needed when creating the live USB.
 
 <!-- https://www.reddit.com/r/voidlinux/comments/q6t7o1/a_home_router_built_on_void_linux_and_zfsbootmenu/ -->
 
+<!-- https://wiki.nftables.org/wiki-nftables/index.php/Main_Page#Examples -->
+
 ### Wireguard
 
 https://portforward.com/
