@@ -38,6 +38,8 @@ This is needed when creating the live USB.
 
 <!-- https://wiki.nftables.org/wiki-nftables/index.php/Main_Page#Examples -->
 
+<!-- https://gist.github.com/Gunni/5deaf9b8b65b212cbfcf9aab6fa46820 -->
+
 ### Wireguard
 
 https://portforward.com/
