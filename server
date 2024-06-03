@@ -197,6 +197,8 @@ rsync -aAX --chown=root:root rootfs/ /tmp/server/ # server files
 
 sed -i "s/%PLACEHOLDER%/PARTUUID=${ROOTFS}/g" /tmp/server/boot/cmdline.txt # fstab
 
+chroot /tmp/server /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
+
 chroot /tmp/server /bin/chown -R server:server /home/server
 
 chroot /tmp/server /bin/xbps-reconfigure -fa
