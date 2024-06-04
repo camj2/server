@@ -178,6 +178,7 @@ ln -f /tmp/server/etc/dns/root.key /tmp/server/etc/unbound/
 chroot /tmp/server /bin/mkdir -p /var/cache/inadyn
 chroot /tmp/server /bin/chown inadyn:inadyn /var/cache/inadyn
 chroot /tmp/server /bin/chown inadyn:inadyn /etc/inadyn.conf
+chroot /tmp/server /bin/chmod 600 /etc/inadyn.conf
 
 # user
 

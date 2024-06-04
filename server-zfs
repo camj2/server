@@ -196,6 +196,7 @@ ln -f /mnt/etc/dns/root.key /mnt/etc/unbound/
 chroot /mnt /bin/mkdir -p /var/cache/inadyn
 chroot /mnt /bin/chown inadyn:inadyn /var/cache/inadyn
 chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf
+chroot /mnt /bin/chmod 600 /etc/inadyn.conf
 
 # user
 
