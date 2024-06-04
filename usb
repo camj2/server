@@ -12,6 +12,8 @@ ADDR="$2"
 ZONE="$3"
 USB="$4"
 
+cd -- "$(dirname -- "$(readlink -f -- "$0")")"
+
 die() {
   printf "usb: %s\n" "$*" >&2
   exit 1

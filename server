@@ -12,6 +12,8 @@ ADDR="$2"
 ZONE="$3"
 SD_CARD="$4"
 
+cd -- "$(dirname -- "$(readlink -f -- "$0")")"
+
 die() {
   printf "server: %s\n" "$*" >&2
   exit 1
