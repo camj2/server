@@ -78,12 +78,6 @@ provider cloudflare.com {
 }
 ```
 
-<!-- Create an [account](https://www.duckdns.org/) and add your token/subdomain to:
-
-```
-rootfs/etc/cron.hourly/duckdns
-``` -->
-
 #### Peers
 
 <!-- PersistentKeepalive = 25 -->
@@ -103,24 +97,18 @@ Generate:
 ```
 ./tools/wg-gen -h # usage
 
-./tools/wg-gen -ru -t <peer_total> <endpoint>
+./tools/wg-gen -r -t <peer_total> <endpoint>
 ```
-
-<!-- Shared:
-
-```
-./tools/wg-gen -t <peer_total> -p 51821 <endpoint>
-``` -->
 
 Add:
 
 ```
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 
-cp -f wireguard/unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf # wireguard peers
+cp -f wireguard/unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf
 ```
 
-Make sure to edit `wireguard.conf` and add the names of all your peers:
+Example `wireguard.conf` file:
 
 ```
 local-data: "server AAAA fd87:9b28:1e2f:b635::1"
@@ -129,9 +117,6 @@ local-data: "laptop AAAA fd87:9b28:1e2f:b635::3"
 local-data: "computer AAAA fd87:9b28:1e2f:b635::4"
 local-data: "backup AAAA fd87:9b28:1e2f:b635::5"
 ```
-
-<!-- local-data-ptr: "fd87:9b28:1e2f:b635::1 server" -->
-<!-- private-domain: server -->
 
 Test:
 
@@ -142,9 +127,9 @@ dig +short server AAAA
 This makes it easy to ssh between your peers:
 
 ```
-ssh server@server # fd87:9b28:1e2f:b635::1
+ssh server@server # connect to fd87:9b28:1e2f:b635::1
 
-ssh laptop # fd87:9b28:1e2f:b635::3
+ssh laptop # connect to fd87:9b28:1e2f:b635::3
 ```
 
 ### Unbound
@@ -237,14 +222,8 @@ reboot
 Check with:
 
 ```
-dig @server google.com
-```
-
-Check DNSSEC with:
-
-```
-dig fail01.dnssec.works @server -p 53 # SERVFAIL
-dig dnssec.works @server -p 53 # NOERROR
+dig cloudflare.com A
+dig cloudflare.com AAAA
 ```
 
 https://dnscheck.tools/
@@ -260,13 +239,13 @@ wg
 Check endpoint:
 
 ```
-dig <subdomain>.duckdns.org
+dig <subdomain>.<domain>
 ```
 
 ### Password
 
 ```
-passwd server # optional
+passwd server
 ```
 
 ## LICENSE
