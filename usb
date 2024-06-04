@@ -35,6 +35,14 @@ if [ ! -x server ]; then
   die "script 'server': not found"
 fi
 
+if [ ! -d rootfs-zfs ]; then
+  die "directory 'rootfs-zfs': not found"
+fi
+
+if [ ! -x server-zfs ]; then
+  die "script 'server-zfs': not found"
+fi
+
 if [ -e /tmp/server ]; then
   die "directory '/tmp/server': already exists"
 fi
