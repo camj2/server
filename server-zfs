@@ -141,6 +141,8 @@ XBPS_ARCH=aarch64-musl xbps-install -SyU -R https://repo-fastly.voidlinux.org/cu
 
 # shellcheck disable=SC2016
 sed -i 's/-${VERSION}//g' /usr/libexec/dracut/*
+sed -i "s/#DKMS_JOBS=/DKMS_JOBS=2/g" /etc/default/dkms
+
 chroot /mnt /bin/xbps-reconfigure -a
 
 ln -sf /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/

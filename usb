@@ -116,6 +116,8 @@ ln -sf /etc/sv/rngd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/ntpd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /tmp/server/etc/runit/runsvdir/default/
 
+sed -i "s/#DKMS_JOBS=/DKMS_JOBS=2/g" /etc/default/dkms
+
 sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /tmp/server/etc/ssh/sshd_config
 
 printf "root:voidlinux\n" | chroot /tmp/server /bin/chpasswd -c SHA512
