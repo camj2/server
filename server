@@ -2,17 +2,6 @@
 
 set -e
 
-FS=ext4
-
-while getopts t: opt; do
-  case $opt in
-    t) FS=$OPTARG ;;
-    *) exit 1 ;;
-  esac
-done
-
-shift $((OPTIND - 1))
-
 if [ $# -ne 4 ]; then
   printf "./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>\n" >&2
   exit 1
@@ -46,11 +35,6 @@ if [ -e /tmp/server ]; then
   die "directory '/tmp/server': already exists"
 fi
 
-case $FS in
-  ext4 | xfs | f2fs) : ;;
-  *) die "filesystem: '${FS}' not supported" ;;
-esac
-
 set -x
 
 # format
@@ -70,12 +54,6 @@ BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
-
-case $FS in
-  ext4) mkfs.ext4 "${SD_CARD}-part2" ;;
-  xfs) mkfs.xfs "${SD_CARD}-part2" ;;
-  f2fs) mkfs.f2fs -O extra_attr,inode_checksum,sb_checksum,compression "${SD_CARD}-part2" ;;
-esac
 
 # mount
 
@@ -165,16 +143,11 @@ printf "server\n" > /tmp/server/etc/hostname
 ln -sf "$ZONE" /tmp/server/etc/localtime
 
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
-printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n" >> /tmp/server/etc/fstab
-case $FS in
-  f2fs)
-    printf "PARTUUID=%s / %s compress_algorithm=lz4,compress_chksum,lazytime,noatime 0 1\n" "$ROOTFS" "$FS" >> /tmp/server/etc/fstab
-    ;;
-  *)
-    printf "PARTUUID=%s / %s discard,noatime 0 1\n" "$ROOTFS" "$FS" >> /tmp/server/etc/fstab
-    ;;
-esac
-printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS" >> /tmp/server/etc/fstab
+{
+  printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
+  printf "PARTUUID=%s / xfs discard,noatime 0 1\n" "$ROOTFS"
+  printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS"
+} >> /tmp/server/etc/fstab
 
 {
   printf "\n"
