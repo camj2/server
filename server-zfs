@@ -100,12 +100,13 @@ printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/e
   printf "ignorepkg=linux\n"
   printf "ignorepkg=linux-headers\n"
   printf "ignorepkg=sudo\n"
+  printf "preserve=/usr/libexec/dracut/*\n"
 } > /mnt/etc/xbps.d/xbps.conf
 
 mkdir -p /mnt/var/db/xbps/keys
 cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/current/aarch64 -r /mnt \
+XBPS_ARCH=aarch64-musl xbps-install -SyU -R https://repo-fastly.voidlinux.org/current/aarch64 -r /mnt \
   base-system \
   bat \
   bind-utils \
@@ -137,6 +138,10 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   wireguard-tools \
   zfs \
   zsh
+
+# shellcheck disable=SC2016
+sed -i 's/-${VERSION}//g' /usr/libexec/dracut/*
+chroot /mnt /bin/xbps-reconfigure -a
 
 ln -sf /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/

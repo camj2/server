@@ -6,4 +6,4 @@ dtparam=krnbt=on
 
 disable_splash=1
 
-include initramfs.txt
+initramfs initramfs.img followkernel
