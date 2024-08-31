@@ -63,7 +63,7 @@ BOOTFS=$(blkid -o value -s PARTUUID "${USB}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${USB}-part2")
 
 mkfs.vfat -F32 "${USB}-part1"
-mkfs.ext4 "${USB}-part2"
+mkfs.xfs "${USB}-part2"
 
 # mount
 
@@ -141,7 +141,7 @@ ln -sf "$ZONE" /tmp/server/etc/localtime
 } >> /tmp/server/etc/rc.local
 
 {
-  printf "PARTUUID=%s / ext4 noatime 0 1\n" "$ROOTFS"
+  printf "PARTUUID=%s / xfs noatime 0 1\n" "$ROOTFS"
   printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS"
 } >> /tmp/server/etc/fstab
 
