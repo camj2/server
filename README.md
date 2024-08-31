@@ -230,6 +230,8 @@ dig cloudflare.com AAAA
 
 https://dnscheck.tools/
 
+<!-- https://www.dnsleaktest.com/ -->
+
 ### Wireguard
 
 Check handshake:
