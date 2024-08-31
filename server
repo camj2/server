@@ -196,7 +196,7 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /tmp/server/e
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /tmp/server/etc/ssh/sshd_config
 sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /tmp/server/etc/ssh/sshd_config
 
-rsync -aAX --chown=root:root rootfs/ /tmp/server/ # server files
+rsync -aAX --inplace --chown=root:root rootfs/ /tmp/server/ # server files
 
 sed -i "s/%PLACEHOLDER%/PARTUUID=${ROOTFS}/g" /tmp/server/boot/cmdline.txt # fstab
 

@@ -151,7 +151,7 @@ printf "disable_splash=1\n" >> /tmp/server/boot/config.txt
 
 # copy
 
-rsync -aAX --chown=root:root ./ /tmp/server/root/ # server files
+rsync -aAX --inplace --chown=root:root ./ /tmp/server/root/ # server files
 
 # unmount
 

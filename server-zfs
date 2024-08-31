@@ -218,8 +218,8 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
 sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
 
-rsync -aAX --chown=root:root rootfs/ /mnt/     # server files
-rsync -aAX --chown=root:root rootfs-zfs/ /mnt/ # server files
+rsync -aAX --inplace --chown=root:root rootfs/ /mnt/     # server files
+rsync -aAX --inplace --chown=root:root rootfs-zfs/ /mnt/ # server files
 
 chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
 
