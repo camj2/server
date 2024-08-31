@@ -87,7 +87,7 @@ for _fs in dev proc sys; do
 done
 
 mkdir -p /mnt/tmp
-mount -o nosuid,nodev,noatime -t tmpfs tmpfs /tmp/server/tmp
+mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
 
 # void
 
