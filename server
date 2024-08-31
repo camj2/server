@@ -54,6 +54,7 @@ BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
+mkfs.xfs "${SD_CARD}-part2"
 
 # mount
 
