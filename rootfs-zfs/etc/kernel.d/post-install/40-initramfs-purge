@@ -1,0 +1,9 @@
+#!/bin/sh
+
+VERSION="$2"
+
+for img in boot/initramfs-*.img; do
+  if [ "$img" != "boot/initramfs-${VERSION}.img" ]; then
+    rm -f "$img"
+  fi
+done
