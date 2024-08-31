@@ -105,7 +105,7 @@ Add:
 ```
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 
-cp -f wireguard/unbound.conf rootfs/etc/unbound/unbound.conf.d/wireguard.conf
+cp -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
 ```
 
 Example `wireguard.conf` file:
@@ -155,7 +155,7 @@ wc -l < deny.conf
 Add:
 
 ```
-mv -f deny.conf rootfs/etc/unbound/unbound.conf.d/
+mv -f deny.conf rootfs/etc/unbound/
 ```
 ### SSH
 
