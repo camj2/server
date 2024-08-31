@@ -166,7 +166,8 @@ mkdir -p /mnt/etc/dracut.conf.d
 printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf
 cp -f /etc/hostid /mnt/etc/
 
-printf "%s\n" "$(sed "s/[[:space:]]/ /g" /mnt/etc/fstab | tr -s " ")" > /mnt/etc/fstab # pretty
+printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
+printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n" >> /tmp/server/etc/fstab
 printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$(blkid -o value -s PARTUUID "${SD_CARD}-part1")" >> /mnt/etc/fstab
 
 {
