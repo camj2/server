@@ -171,6 +171,7 @@ ln -sf "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
 printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf
+printf "compress=zstd\n" >> /mnt/etc/dracut.conf
 cp -f /etc/hostid /mnt/etc/
 
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
