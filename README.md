@@ -40,6 +40,8 @@ This is needed when creating the live USB.
 
 <!-- https://gist.github.com/Gunni/5deaf9b8b65b212cbfcf9aab6fa46820 -->
 
+<!-- https://github.com/StevenBlack/hosts -->
+
 ### Wireguard
 
 https://portforward.com/
@@ -247,6 +249,8 @@ dig <subdomain>.<domain>
 ```
 passwd server
 ```
+
+<!-- https://www.speedtest.net/apps/cli -->
 
 ## LICENSE
 
