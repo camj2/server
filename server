@@ -132,6 +132,7 @@ ln -sf /etc/sv/sshd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/unbound /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/inadyn /tmp/server/etc/runit/runsvdir/default/
+# ln -sf /etc/sv/dhcpcd-eth0 /mnt/etc/runit/runsvdir/default/ # workaround
 
 if [ -f /tmp/server/etc/default/libc-locales ]; then
   sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /tmp/server/etc/default/libc-locales
@@ -142,6 +143,9 @@ fi
 printf "server\n" > /tmp/server/etc/hostname
 
 ln -sf "$ZONE" /tmp/server/etc/localtime
+
+# printf "OPTS=-6\n" > /mnt/etc/sv/dhcpcd-eth0/conf
+# printf "resolvconf=no\n" >> /mnt/etc/resolvconf.conf
 
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
 {

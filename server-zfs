@@ -156,6 +156,7 @@ ln -sf /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/inadyn /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/zed /mnt/etc/runit/runsvdir/default/
+# ln -sf /etc/sv/dhcpcd-eth0 /mnt/etc/runit/runsvdir/default/ # workaround
 
 if [ -f /mnt/etc/default/libc-locales ]; then
   sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /mnt/etc/default/libc-locales
@@ -166,6 +167,9 @@ fi
 printf "server\n" > /mnt/etc/hostname
 
 ln -sf "$ZONE" /mnt/etc/localtime
+
+# printf "OPTS=-6\n" > /mnt/etc/sv/dhcpcd-eth0/conf
+# printf "resolvconf=no\n" >> /mnt/etc/resolvconf.conf
 
 mkdir -p /mnt/etc/dracut.conf.d
 printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf
