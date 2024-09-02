@@ -254,6 +254,28 @@ passwd server
 
 <!-- https://www.speedtest.net/apps/cli -->
 
+### Encryption
+
+<!-- https://wiki.archlinux.org/title/Fscrypt -->
+
+If you are using f2fs as the root filesystem, you can optionally enable `fscrypt`:
+
+```
+fscrypt setup
+```
+
+You can then encrypt any directory using:
+
+```
+fscrypt encrypt <dir>
+```
+
+Unlock with the following:
+
+```
+fscrypt unlock <dir>
+```
+
 ## LICENSE
 
 MIT
