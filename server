@@ -129,11 +129,11 @@ ln -sf /etc/sv/snooze-hourly /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/snooze-monthly /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/snooze-weekly /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/socklog-unix /tmp/server/etc/runit/runsvdir/default/
+ln -sf /etc/sv/dhcpcd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/unbound /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /tmp/server/etc/runit/runsvdir/default/
 ln -sf /etc/sv/inadyn /tmp/server/etc/runit/runsvdir/default/
-# ln -sf /etc/sv/dhcpcd-eth0 /mnt/etc/runit/runsvdir/default/ # workaround
 
 if [ -f /tmp/server/etc/default/libc-locales ]; then
   sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /tmp/server/etc/default/libc-locales
@@ -145,9 +145,6 @@ printf "server\n" > /tmp/server/etc/hostname
 
 ln -sf "$ZONE" /tmp/server/etc/localtime
 
-# printf "OPTS=-6\n" > /mnt/etc/sv/dhcpcd-eth0/conf
-# printf "resolvconf=no\n" >> /mnt/etc/resolvconf.conf
-
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
 {
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
@@ -157,14 +154,18 @@ printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " 
 
 {
   printf "\n"
-  printf "ip link set dev eth0 up\n"
-  printf "ip addr add %s/24 brd + dev eth0\n" "$ADDR"
-  printf "ip route add default via %s\n" "$ROUTE"
-
-  printf "\n"
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /tmp/server/etc/rc.local
+
+{
+  printf "\n"
+  printf "interface eth0\n"
+  printf "static ip_address=%s/24\n" "$ADDR"
+  printf "static routers=%s\n" "$ROUTE"
+} >> /tmp/server/etc/dhcpcd.conf
+
+printf "resolvconf=no\n" >> /tmp/server/etc/resolvconf.conf # wireguard-tools
 
 {
   printf "nameserver 127.0.0.1\n" # unbound

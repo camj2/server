@@ -151,12 +151,12 @@ ln -sf /etc/sv/snooze-hourly /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/snooze-monthly /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/snooze-weekly /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/socklog-unix /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/dhcpcd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/inadyn /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/zed /mnt/etc/runit/runsvdir/default/
-# ln -sf /etc/sv/dhcpcd-eth0 /mnt/etc/runit/runsvdir/default/ # workaround
 
 if [ -f /mnt/etc/default/libc-locales ]; then
   sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /mnt/etc/default/libc-locales
@@ -167,9 +167,6 @@ fi
 printf "server\n" > /mnt/etc/hostname
 
 ln -sf "$ZONE" /mnt/etc/localtime
-
-# printf "OPTS=-6\n" > /mnt/etc/sv/dhcpcd-eth0/conf
-# printf "resolvconf=no\n" >> /mnt/etc/resolvconf.conf
 
 mkdir -p /mnt/etc/dracut.conf.d
 printf 'add_dracutmodules+=" zfs "\n' > /mnt/etc/dracut.conf.d/zfs.conf
@@ -184,14 +181,18 @@ printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " 
 
 {
   printf "\n"
-  printf "ip link set dev eth0 up\n"
-  printf "ip addr add %s/24 brd + dev eth0\n" "$ADDR"
-  printf "ip route add default via %s\n" "$ROUTE"
-
-  printf "\n"
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /mnt/etc/rc.local
+
+{
+  printf "\n"
+  printf "interface eth0\n"
+  printf "static ip_address=%s/24\n" "$ADDR"
+  printf "static routers=%s\n" "$ROUTE"
+} >> /mnt/etc/dhcpcd.conf
+
+printf "resolvconf=no\n" >> /mnt/etc/resolvconf.conf # wireguard-tools
 
 {
   printf "nameserver 127.0.0.1\n" # unbound
