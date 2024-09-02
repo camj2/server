@@ -54,7 +54,7 @@ BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
-mkfs.f2fs -i -O extra_attr,inode_checksum,sb_checksum,compression "${SD_CARD}-part2"
+mkfs.f2fs -i -O extra_attr,inode_checksum,sb_checksum,compression,encrypt "${SD_CARD}-part2"
 
 # mount
 
@@ -97,6 +97,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   cbonsai \
   chrony \
   curl \
+  fscrypt \
   htop \
   inadyn \
   lsd \
