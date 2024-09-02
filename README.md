@@ -102,10 +102,15 @@ Generate:
 ./tools/wg-gen -r -t <peer_total> <endpoint>
 ```
 
-Add:
+Add to rootfs:
 
 ```
+# wireguard
+
+install -d -m 700 rootfs/etc/wireguard
 cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
+
+# unbound
 
 cp -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
 ```
@@ -113,25 +118,25 @@ cp -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
 Example `wireguard.conf` file:
 
 ```
-local-data: "server AAAA fd87:9b28:1e2f:b635::1"
-local-data: "phone AAAA fd87:9b28:1e2f:b635::2"
-local-data: "laptop AAAA fd87:9b28:1e2f:b635::3"
+local-data: "server   AAAA fd87:9b28:1e2f:b635::1"
+local-data: "phone    AAAA fd87:9b28:1e2f:b635::2"
+local-data: "laptop   AAAA fd87:9b28:1e2f:b635::3"
 local-data: "computer AAAA fd87:9b28:1e2f:b635::4"
-local-data: "backup AAAA fd87:9b28:1e2f:b635::5"
+local-data: "backup   AAAA fd87:9b28:1e2f:b635::5"
 ```
 
-Test:
+<!-- dig +short server AAAA -->
+
+This essentially creates a roaming network and allows for easy access between your devices:
 
 ```
-dig +short server AAAA
+ssh server@server # fd87:9b28:1e2f:b635::1
 ```
 
-This makes it easy to ssh between your peers:
+Very powerful when used in conjunction with `rsync`:
 
 ```
-ssh server@server # connect to fd87:9b28:1e2f:b635::1
-
-ssh laptop # connect to fd87:9b28:1e2f:b635::3
+rsync -aAX ~/ laptop:~/ # push files from computer to laptop
 ```
 
 ### Unbound
@@ -154,7 +159,7 @@ Check with:
 wc -l < deny.conf
 ```
 
-Add:
+Add to rootfs:
 
 ```
 mv -f deny.conf rootfs/etc/unbound/
@@ -168,15 +173,6 @@ rootfs/home/server/.ssh/authorized_keys
 ```
 
 ## Installation
-
-First fix permissions:
-
-```
-chmod 700 rootfs/home/server
-chmod 700 rootfs/home/server/.ssh
-chmod 700 rootfs/etc/wireguard
-chmod 600 rootfs/etc/inadyn.conf
-```
 
 ### USB
 
@@ -200,6 +196,8 @@ Check `date` until the clock is correct.
 ```
 ./server-zfs <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
 ```
+
+**Note**: Use `./server` instead if you wish to use f2fs rather than zfs.
 
 <!-- default_route = router ipv4 address -->
 <!-- ip_address = server ipv4 address -->
@@ -247,6 +245,8 @@ dig <subdomain>.<domain>
 ```
 
 ### Password
+
+Set password if you plan on using a display and keyboard with your server:
 
 ```
 passwd server

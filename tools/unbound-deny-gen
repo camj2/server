@@ -2,9 +2,13 @@
 
 set -e
 
-# mkdir -p /etc/unbound/unbound.conf.d
-
 {
+  # ads ->
+
+  # curl -sS https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts
+
+  # ads + porn ->
+
   curl -sS https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
   curl -sS https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
 } |
