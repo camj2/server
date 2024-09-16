@@ -238,7 +238,7 @@ rsync -aAX --inplace --chown=root:root rootfs-zfs/ /mnt/ # server files
 chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
 
 chroot /mnt /bin/chown -R server:server /home/server
-chroot /mnt /bin/chown 700 /home/server /home/server/.ssh # fix
+chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # fix
 
 chroot /mnt /bin/xbps-reconfigure -fa
 

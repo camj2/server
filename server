@@ -212,7 +212,7 @@ sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /tmp/server/boot/cmdline.txt # fs
 chroot /tmp/server /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
 
 chroot /tmp/server /bin/chown -R server:server /home/server
-chroot /tmp/server /bin/chown 700 /home/server /home/server/.ssh # fix
+chroot /tmp/server /bin/chmod 700 /home/server /home/server/.ssh # fix
 
 chroot /tmp/server /bin/xbps-reconfigure -fa
 
