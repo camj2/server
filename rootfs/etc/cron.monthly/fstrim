@@ -1,2 +1,2 @@
 #!/bin/sh
-fstrim -Av | logger -t fstrim -p daemon.info
+fstrim -v /boot | logger -t fstrim -p daemon.info
