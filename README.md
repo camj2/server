@@ -99,7 +99,7 @@ Generate:
 ```
 ./tools/wg-gen -h # usage
 
-./tools/wg-gen -r -t <peer_total> <endpoint>
+./tools/wg-gen -r -t <peer_total> <endpoint>:<port>
 ```
 
 Add to rootfs:

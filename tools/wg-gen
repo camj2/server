@@ -105,7 +105,7 @@ gen_peers() {
       else
         printf "%s\n" "AllowedIPs = ${SERVER_ADDR}/128"
       fi
-      printf "%s\n" "Endpoint = ${ENDPOINT}:${PORT}"
+      printf "%s\n" "Endpoint = ${ENDPOINT}"
     } > "$peer".conf
 
     qrencode -r "$peer".conf -o "$peer".png
@@ -118,7 +118,7 @@ usage() {
   YLW='\033[0;33m'
 
   printf "%b\n" "${YLW}USAGE${RST}:"
-  printf "%s\n" "    wg-gen [OPTIONS] <endpoint>"
+  printf "%s\n" "    wg-gen [OPTIONS] <endpoint>:<port>"
   printf "\n"
   printf "%b\n" "${YLW}OPTIONS${RST}:"
   printf "%b\n" "    ${GRN}-t <peer_total>${RST}    Total number of peers to generate (default: 1)"
