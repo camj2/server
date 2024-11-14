@@ -172,6 +172,21 @@ Add your keys to:
 rootfs/home/server/.ssh/authorized_keys
 ```
 
+#### Username
+
+Add the following to `~/.ssh/config`:
+
+```
+Host server
+User server
+```
+
+This sets the default username used when connecting to the server:
+
+```
+ssh server # ssh server@server
+```
+
 ## Installation
 
 ### USB
