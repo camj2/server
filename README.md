@@ -136,7 +136,7 @@ ssh server@server # fd87:9b28:1e2f:b635::1
 Very powerful when used in conjunction with `rsync`:
 
 ```
-rsync -aAX ~/ laptop:~/ # push files from computer to laptop
+rsync -aAXH --delete ~/ laptop:~/ # push files from computer to laptop
 ```
 
 ### Unbound
