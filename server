@@ -148,7 +148,7 @@ ln -sf "$ZONE" /tmp/server/etc/localtime
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " ")" > /tmp/server/etc/fstab # pretty
 {
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
-  printf "PARTUUID=%s / f2fs compress_algorithm=lz4,compress_chksum,atgc,gc_merge,lazytime,noatime 0 1\n" "$ROOTFS"
+  printf "PARTUUID=%s / f2fs compress_algorithm=lz4,compress_chksum,gc_merge,atgc,lazytime,noatime 0 1\n" "$ROOTFS"
   printf "PARTUUID=%s /boot vfat ro,discard,noatime 0 2\n" "$BOOTFS"
 } >> /tmp/server/etc/fstab
 
