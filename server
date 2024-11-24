@@ -165,7 +165,7 @@ printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /tmp/server/etc/fstab | tr -s " 
   printf "static routers=%s\n" "$ROUTE"
 } >> /tmp/server/etc/dhcpcd.conf
 
-printf "resolvconf=no\n" >> /tmp/server/etc/resolvconf.conf # wireguard-tools
+printf "resolvconf=no\n" > /tmp/server/etc/resolvconf.conf # wireguard-tools
 
 {
   printf "nameserver 127.0.0.1\n" # unbound
