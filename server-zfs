@@ -137,7 +137,7 @@ XBPS_ARCH=aarch64-musl xbps-install -SyU -R https://repo-fastly.voidlinux.org/cu
   wireguard-tools \
   zfs \
   zsh \
-  zstd # dracut
+  zstd
 
 sed -i "s/#DKMS_JOBS=/DKMS_JOBS=2/g" /etc/default/dkms
 
