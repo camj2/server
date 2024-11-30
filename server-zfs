@@ -235,6 +235,10 @@ sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
 rsync -a --chown=root:root --inplace rootfs/ /mnt/     # server files
 rsync -a --chown=root:root --inplace rootfs-zfs/ /mnt/ # server files
 
+if [ -n "$SERVER_ROOTFS_OVERLAY" ]; then
+  rsync -a --chown=root:root --inplace "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
+fi
+
 chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
 
 chroot /mnt /bin/chown -R server:server /home/server
