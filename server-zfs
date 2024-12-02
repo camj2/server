@@ -224,7 +224,7 @@ chroot /mnt /bin/install -d -m 700 -o server -g server /home/server
 chroot /mnt /bin/passwd -dl root
 chroot /mnt /bin/passwd -dl server
 
-# sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/sshd_config
+sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/sshd_config
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
 sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
 
