@@ -39,7 +39,7 @@ set -x
 
 # format
 
-xbps-install -Syu zfs
+xbps-install -Syu zfs-lts
 
 zgenhostid -f
 
@@ -135,7 +135,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   unbound \
   vsv \
   wireguard-tools \
-  zfs \
+  zfs-lts \
   zsh \
   zstd
 
