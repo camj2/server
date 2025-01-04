@@ -1,5 +1,11 @@
 #!/bin/sh
 
+set -e
+
+mount -o remount,rw /boot
+
+set +e
+
 xbps-install -Syu
 ret=$?
 
@@ -17,6 +23,8 @@ fi
 
 xbps-remove -yo
 xbps-remove -yO
+
+mount -o remount,ro /boot
 
 curl -sS -o /etc/unbound/root.hints https://www.internic.net/domain/named.root
 ln -f /etc/dns/root.key /etc/unbound/
