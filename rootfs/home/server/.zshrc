@@ -5,6 +5,8 @@ compinit
 
 export PATH="$PATH:$HOME/.bin"
 
+export SVDIR="$HOME/.sv"
+
 export LESSHISTFILE=-
 
 export ZFS_COLOR=1
