@@ -47,8 +47,6 @@ set -x
 
 # format
 
-[ -b "${USB}-part1" ] && wipefs -a "${USB}-part1"
-[ -b "${USB}-part2" ] && wipefs -a "${USB}-part2"
 wipefs -fa "$USB"
 
 printf ", 512M, c\n," | sfdisk "$USB"
@@ -59,7 +57,7 @@ BOOTFS=$(blkid -o value -s PARTUUID "${USB}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${USB}-part2")
 
 mkfs.vfat -F32 "${USB}-part1"
-mkfs.xfs "${USB}-part2"
+mkfs.xfs -f "${USB}-part2"
 
 # mount
 
