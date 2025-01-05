@@ -41,6 +41,8 @@ set -x
 
 xbps-install -Syu zfs-lts
 
+modprobe zfs
+
 zgenhostid -f
 
 blkdiscard -f "$SD_CARD"
