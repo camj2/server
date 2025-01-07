@@ -59,8 +59,6 @@ bindkey '^L' clear_screen
 
 alias sudo=doas
 
-alias f=pfetch
-
 alias cal="cal -y"
 
 alias grep="grep --color=auto"
