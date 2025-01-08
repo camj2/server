@@ -209,28 +209,15 @@ Check `date` until the clock is correct.
 **Warning**: This will completely wipe the SD card!
 
 ```
-./server-zfs <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
+./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
 ```
 
-**Note**: Use `./server` instead if you wish to use f2fs rather than zfs.
+**Note**: Use `./server-zfs` instead if you wish to use zfs rather than f2fs.
 
 <!-- default_route = router ipv4 address -->
 <!-- ip_address = server ipv4 address -->
 
 ## Notes
-
-### ZFS
-
-You can "factory reset" the server at anytime using the base snapshots created at install:
-
-**Warning**: This will wipe all data from your server!
-
-```
-zfs rollback -R server/root@base
-zfs rollback -R server/home@base
-
-reboot
-```
 
 ### Unbound
 
@@ -273,7 +260,8 @@ passwd server
 
 <!-- https://wiki.archlinux.org/title/Fscrypt -->
 
-If you are using f2fs as the root filesystem, you can optionally enable `fscrypt`:
+If you are using f2fs as the root filesystem,
+you can optionally enable `fscrypt`:
 
 ```
 fscrypt setup
@@ -289,6 +277,20 @@ Unlock with the following:
 
 ```
 fscrypt unlock <dir>
+```
+
+### ZFS
+
+If you are using zfs as the root filesystem,
+you can "factory reset" the server at anytime using the base snapshots created at install:
+
+**Warning**: This will wipe all data from your server!
+
+```
+zfs rollback -R server/root@base
+zfs rollback -R server/home@base
+
+reboot
 ```
 
 ## LICENSE
