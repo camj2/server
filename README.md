@@ -75,7 +75,7 @@ provider cloudflare.com {
 Generate your wireguard peers with the provided [`wg-gen`](#wg-gen) script:
 
 ```
-./utils/wg-gen -e <endpoint>:<port> phone laptop computer backup
+./utils/wg-gen -e <subdomain>.<domain>:<port> phone laptop computer backup
 ```
 
 Add the wireguard config:
