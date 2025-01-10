@@ -1,0 +1,25 @@
+{
+  "modules": [
+    "title",
+    "separator",
+    "os",
+    "host",
+    "kernel",
+    "uptime",
+    "loadavg",
+    "processes",
+    "packages",
+    "shell",
+    "cpu",
+    {
+      "type": "memory",
+      "format": "{used} / {total}"
+    },
+    {
+      "type": "zpool",
+      "format": "{state}"
+    },
+    "break",
+    "colors"
+  ]
+}
