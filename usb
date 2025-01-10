@@ -98,6 +98,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   nano \
   zsh \
   lsd \
+  vsv \
   htop \
   bottom \
   fastfetch \
