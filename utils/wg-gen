@@ -51,6 +51,8 @@ gen_wg() {
     {
       echo
 
+      echo "# ${peer}"
+
       echo "[Peer]"
       echo "PublicKey = ${PEER_PUB}"
       echo "PresharedKey = ${PSK}"
