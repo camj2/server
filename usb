@@ -143,6 +143,7 @@ ln -sf "$ZONE" /mnt/etc/localtime
 
 rsync -a --chown=root:root ./rootfs-usb/ /mnt/ # usb files
 rsync -a --chown=root:root ./ /mnt/root/       # repo files
+chmod 750 /mnt/root                            # fix
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
 
