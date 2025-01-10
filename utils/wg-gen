@@ -27,13 +27,13 @@ gen_wg() {
   HOST_ADDR=$(gen_ip 1 server)
 
   HOST_KEY=$(wg genkey)
-  HOST_PUB=$(printf %s "$HOST_KEY" | wg pubkey)
+  HOST_PUB=$(echo "$HOST_KEY" | wg pubkey)
 
   {
-    out "[Interface]"
-    out "PrivateKey = ${HOST_KEY}"
-    out "Address = ${HOST_ADDR}/64"
-    out "ListenPort = ${HOST_PORT}"
+    echo "[Interface]"
+    echo "PrivateKey = ${HOST_KEY}"
+    echo "Address = ${HOST_ADDR}/64"
+    echo "ListenPort = ${HOST_PORT}"
   } > 1-server.conf
 
   int=1
@@ -46,30 +46,30 @@ gen_wg() {
     PSK=$(wg genpsk)
 
     PEER_KEY=$(wg genkey)
-    PEER_PUB=$(printf %s "$PEER_KEY" | wg pubkey)
+    PEER_PUB=$(echo "$PEER_KEY" | wg pubkey)
 
     {
-      out
+      echo
 
-      out "[Peer]"
-      out "PublicKey = ${PEER_PUB}"
-      out "PresharedKey = ${PSK}"
-      out "AllowedIPs = ${PEER_ADDR}/128"
+      echo "[Peer]"
+      echo "PublicKey = ${PEER_PUB}"
+      echo "PresharedKey = ${PSK}"
+      echo "AllowedIPs = ${PEER_ADDR}/128"
     } >> 1-server.conf
 
     {
-      out "[Interface]"
-      out "PrivateKey = ${PEER_KEY}"
-      out "Address = ${PEER_ADDR}/128"
-      out "DNS = ${HOST_ADDR}"
+      echo "[Interface]"
+      echo "PrivateKey = ${PEER_KEY}"
+      echo "Address = ${PEER_ADDR}/128"
+      echo "DNS = ${HOST_ADDR}"
 
-      out
+      echo
 
-      out "[Peer]"
-      out "PublicKey = ${HOST_PUB}"
-      out "PresharedKey = ${PSK}"
-      out "AllowedIPs = ${WG_PREFIX}::/64"
-      out "Endpoint = ${WG_ENDPOINT}"
+      echo "[Peer]"
+      echo "PublicKey = ${HOST_PUB}"
+      echo "PresharedKey = ${PSK}"
+      echo "AllowedIPs = ${WG_PREFIX}::/64"
+      echo "Endpoint = ${WG_ENDPOINT}"
     } > "${name}.conf"
 
     qrencode -r "${name}.conf" -o "${name}.png"
@@ -79,10 +79,6 @@ gen_wg() {
 pkg() {
   cmd=$(command -v "$1")
   [ -x "$cmd" ]
-}
-
-out() {
-  printf "%s\n" "$*"
 }
 
 die() {
