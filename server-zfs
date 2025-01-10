@@ -3,7 +3,6 @@
 set -e
 
 if [ $# -ne 4 ]; then
-  printf "./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>\n" >&2
   exit 1
 fi
 
@@ -40,19 +39,15 @@ set -x
 # format
 
 xbps-install -Syu zfs-lts
-
 modprobe zfs
 
 zgenhostid -f
 
 blkdiscard -f "$SD_CARD"
-
 printf ", 512M, c\n," | sfdisk "$SD_CARD"
-
 udevadm settle
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
-
 zpool create \
   -o ashift=12 \
   -o autotrim=on \
@@ -79,17 +74,17 @@ zfs mount server/home
 
 udevadm trigger
 
-mkdir -p /mnt/boot
+mkdir /mnt/boot
 mount -o noatime "${SD_CARD}-part1" /mnt/boot
 
-for _fs in dev proc sys; do
-  mkdir -p /mnt/"$_fs"
-  mount --rbind /"$_fs" /mnt/"$_fs"
-  mount --make-rslave /mnt/"$_fs"
+for fs in dev proc sys; do
+  mkdir /mnt/"$fs"
+  mount --rbind /"$fs" /mnt/"$fs"
+  mount --make-rslave /mnt/"$fs"
 done
 
-mkdir -p /mnt/tmp
-mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
+mkdir /mnt/tmp
+mount -t tmpfs tmpfs /mnt/tmp
 
 # void
 
@@ -164,7 +159,6 @@ if [ -f /mnt/etc/default/libc-locales ]; then
 fi
 
 printf "server\n" > /mnt/etc/hostname
-
 ln -sf "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
@@ -231,11 +225,11 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
 sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
 
-rsync -a --chown=root:root --inplace rootfs/ /mnt/     # server files
-rsync -a --chown=root:root --inplace rootfs-zfs/ /mnt/ # server files
+rsync -a --chown=root:root rootfs/ /mnt/     # server files
+rsync -a --chown=root:root rootfs-zfs/ /mnt/ # server files
 
 if [ -n "$SERVER_ROOTFS_OVERLAY" ]; then
-  rsync -a --chown=root:root --inplace "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
+  rsync -a --chown=root:root "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
 fi
 
 chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
@@ -247,19 +241,11 @@ chroot /mnt /bin/xbps-reconfigure -fa
 
 # snapshot
 
-zpool sync
-
 zfs snapshot server/root@base
 zfs snapshot server/home@base
 
 # unmount
 
-umount -R /mnt
-
 zpool sync
-
-udevadm settle
-
+umount -R /mnt
 zpool export server
-
-sync

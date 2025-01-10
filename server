@@ -3,7 +3,6 @@
 set -e
 
 if [ $# -ne 4 ]; then
-  printf "./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>\n" >&2
   exit 1
 fi
 
@@ -19,7 +18,7 @@ die() {
   exit 1
 }
 
-if [ "$(uname -m)" != aarch64 ] && ! grep -q binfmt_misc /proc/mounts; then
+if [ "$(uname -m)" != aarch64 ]; then
   die "unsupported hardware"
 fi
 
@@ -35,15 +34,8 @@ set -x
 
 # format
 
-if ! blkdiscard -fv "$SD_CARD"; then
-  [ -b "${USB}-part1" ] && wipefs -a "${USB}-part1"
-  [ -b "${USB}-part2" ] && wipefs -a "${USB}-part2"
-
-  wipefs -fa "$SD_CARD"
-fi
-
+blkdiscard -f "$SD_CARD"
 printf ", 512M, c\n," | sfdisk "$SD_CARD"
-
 udevadm settle
 
 BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
@@ -56,17 +48,17 @@ mkfs.f2fs -i -O extra_attr,inode_checksum,sb_checksum,compression,encrypt "${SD_
 
 mount -o noatime "${SD_CARD}-part2" /mnt
 
-mkdir -p /mnt/boot
+mkdir /mnt/boot
 mount -o noatime "${SD_CARD}-part1" /mnt/boot
 
-for _fs in dev proc sys; do
-  mkdir -p /mnt/"$_fs"
-  mount --rbind /"$_fs" /mnt/"$_fs"
-  mount --make-rslave /mnt/"$_fs"
+for fs in dev proc sys; do
+  mkdir /mnt/"$fs"
+  mount --rbind /"$fs" /mnt/"$fs"
+  mount --make-rslave /mnt/"$fs"
 done
 
-mkdir -p /mnt/tmp
-mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
+mkdir /mnt/tmp
+mount -t tmpfs tmpfs /mnt/tmp
 
 # void
 
@@ -137,7 +129,6 @@ if [ -f /mnt/etc/default/libc-locales ]; then
 fi
 
 printf "server\n" > /mnt/etc/hostname
-
 ln -sf "$ZONE" /mnt/etc/localtime
 
 printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /mnt/etc/fstab | tr -s " ")" > /mnt/etc/fstab # pretty
@@ -200,10 +191,10 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
 sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
 
-rsync -a --chown=root:root --inplace rootfs/ /mnt/ # server files
+rsync -a --chown=root:root rootfs/ /mnt/ # server files
 
 if [ -n "$SERVER_ROOTFS_OVERLAY" ]; then
-  rsync -a --chown=root:root --inplace "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
+  rsync -a --chown=root:root "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
 fi
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt # fstab
@@ -218,5 +209,4 @@ chroot /mnt /bin/xbps-reconfigure -fa
 # unmount
 
 sync
-
 umount -R /mnt
