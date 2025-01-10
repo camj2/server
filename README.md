@@ -2,6 +2,8 @@
 
 Void Linux based Unbound Wireguard server for Raspberry Pi.
 
+<!-- https://github.com/camj2/terraria-linux -->
+
 Related:
 
 * Raspberry Pi 3/4/5
@@ -25,22 +27,14 @@ you may need to clone the live USB boot partition to an SD card in order to boot
 ### QEMU
 
 ```
-xbps-install -Syu qemu-user-static binfmt-support
+xbps-install qemu-user-static binfmt-support
 
-ln -sf /etc/sv/binfmt-support /var/service/
+ln -s /etc/sv/binfmt-support /var/service/
 ```
 
 This is needed when creating the live USB.
 
 ## Configuration
-
-<!-- https://www.reddit.com/r/voidlinux/comments/q6t7o1/a_home_router_built_on_void_linux_and_zfsbootmenu/ -->
-
-<!-- https://wiki.nftables.org/wiki-nftables/index.php/Main_Page#Examples -->
-
-<!-- https://gist.github.com/Gunni/5deaf9b8b65b212cbfcf9aab6fa46820 -->
-
-<!-- https://github.com/StevenBlack/hosts -->
 
 ### Wireguard
 
@@ -53,15 +47,11 @@ https://ipv4.amibehindaproxy.com/
 Use [`cloudflared`](https://github.com/cloudflare/cloudflared)
 instead of `inadyn` if your network is behind a proxy.
 
-#### DDNS
+<br>
 
 <!-- https://www.namecheap.com/ -->
 
-<!-- https://www.cloudflare.com/ -->
-
 <!-- https://developers.cloudflare.com/dns/dnssec/#enable-dnssec -->
-
-<!-- https://github.com/troglobit/inadyn -->
 
 Create a new subdomain for your server and create an `inadyn` configuration file:
 
@@ -80,40 +70,38 @@ provider cloudflare.com {
 }
 ```
 
-#### Peers
+<br>
 
-<!-- PersistentKeepalive = 25 -->
-
-<!-- ListenPort = 51820 -->
-
-<!-- Endpoint -->
-
-Generate peers:
-
-<!-- https://en.wikipedia.org/wiki/Reserved_IP_addresses -->
-
-<!-- https://unique-local-ipv6.com/ -->
-
-<!-- https://www.ibm.com/docs/en/ts3500-tape-library?topic=formats-subnet-masks-ipv4-prefixes-ipv6#d78581e83 -->
+Generate your wireguard peers with the provided [`wg-gen`](#wg-gen) script:
 
 ```
-./tools/wg-gen -e <endpoint>:<port> phone laptop computer backup
+./utils/wg-gen -e <endpoint>:<port> phone laptop computer backup
 ```
 
-Add to rootfs:
+Add the wireguard config:
 
 ```
-# wireguard
-
 install -d -m 700 rootfs/etc/wireguard
-cp -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
-
-# unbound
-
-cp -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
+ln -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 ```
 
-Example `wireguard.conf` file:
+Add the unbound config:
+
+```
+ln -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
+```
+
+You can add the wireguard config to your phone with:
+
+```
+xdg-open wireguard/2-phone.png
+```
+
+Then copy the rest of the wireguard config files to `/etc/wireguard` on your respective systems.
+
+<br>
+
+Example `/etc/unbound/wireguard.conf` file:
 
 ```
 local-data: "server   AAAA fd87:9b28:1e2f:b635::1"
@@ -123,18 +111,14 @@ local-data: "computer AAAA fd87:9b28:1e2f:b635::4"
 local-data: "backup   AAAA fd87:9b28:1e2f:b635::5"
 ```
 
-<!-- dig +short server AAAA -->
+<!-- `dig +short server AAAA` -->
 
 This essentially creates a roaming network and allows for easy access between your devices:
 
-```
-ssh server@server # fd87:9b28:1e2f:b635::1
-```
-
-Very powerful when used in conjunction with `rsync`:
+Very useful when used in conjunction with `rsync`:
 
 ```
-rsync -aAXH --delete ~/ laptop:~/ # push files from computer to laptop
+rsync -aAXH --delete ~/ laptop:~/ # sync laptop with desktop
 ```
 
 ### Unbound
@@ -143,10 +127,10 @@ rsync -aAXH --delete ~/ laptop:~/ # push files from computer to laptop
 
 Unbound can block ads standalone. No need for [Pi-hole](https://pi-hole.net/)!
 
-Generate the blocklist:
+Generate the blocklist with the provided `unbound-deny-gen` script:
 
 ```
-./tools/unbound-deny-gen
+./utils/unbound-deny-gen
 ```
 
 Make sure the blocklist is under 500k domains.
@@ -157,32 +141,30 @@ Check with:
 wc -l < deny.conf
 ```
 
-Add to rootfs:
+Add the unbound config:
 
 ```
-mv -f deny.conf rootfs/etc/unbound/
+ln -f deny.conf rootfs/etc/unbound/
 ```
+
 ### SSH
 
-Add your keys to:
+Add your keys to `rootfs/home/server/.ssh/authorized_keys`.
+**This is required to login**.
 
-```
-rootfs/home/server/.ssh/authorized_keys
-```
+<br>
 
-#### Username
-
-Add the following to `~/.ssh/config`:
+Add the following to `~/.ssh/config`: (optional)
 
 ```
 Host server
 User server
 ```
 
-This sets the default username used when connecting to the server:
+This sets the username when connecting via ssh:
 
 ```
-ssh server # ssh server@server
+ssh server
 ```
 
 ## Installation
@@ -212,9 +194,6 @@ Check `date` until the clock is correct.
 
 **Note**: Use `./server-zfs` instead if you wish to use zfs rather than f2fs.
 
-<!-- default_route = router ipv4 address -->
-<!-- ip_address = server ipv4 address -->
-
 ## Notes
 
 ### Unbound
@@ -229,6 +208,8 @@ dig cloudflare.com AAAA
 https://dnscheck.tools/
 
 <!-- https://www.dnsleaktest.com/ -->
+
+<!-- https://www.speedtest.net/apps/cli -->
 
 ### Wireguard
 
@@ -246,41 +227,37 @@ dig <subdomain>.<domain>
 
 ### Password
 
-Set password if you plan on using a display and keyboard with your server:
+Set a password if you plan on using a display and keyboard:
 
 ```
 passwd server
 ```
 
-<!-- https://www.speedtest.net/apps/cli -->
-
 ### Encryption
 
 <!-- https://wiki.archlinux.org/title/Fscrypt -->
 
-If you are using f2fs as the root filesystem,
-you can optionally enable `fscrypt`:
+If you are using f2fs, setup `fscrypt`: (optional)
 
 ```
 fscrypt setup
 ```
 
-You can then encrypt any directory using:
+Encrypt with:
 
 ```
 fscrypt encrypt <dir>
 ```
 
-Unlock with the following:
+Unlock with:
 
 ```
 fscrypt unlock <dir>
 ```
 
-### ZFS
+### Reset
 
-If you are using zfs as the root filesystem,
-you can "factory reset" the server at anytime using the base snapshots created at install:
+If you are using zfs, you can "factory reset" the server at anytime with:
 
 **Warning**: This will wipe all data from your server!
 
@@ -310,6 +287,13 @@ reboot
 `WG_ENDPOINT`
 
 `WG_PREFIX`
+
+
+<!-- `PersistentKeepalive = 25` -->
+
+<!-- `ListenPort = 51820` -->
+
+<!-- `Endpoint = <host>:<port>` -->
 
 ## LICENSE
 
