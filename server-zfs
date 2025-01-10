@@ -239,13 +239,17 @@ chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # fix
 
 chroot /mnt /bin/xbps-reconfigure -fa
 
-# snapshot
+# unmount
+
+sync
 
 zfs snapshot server/root@base
 zfs snapshot server/home@base
 
-# unmount
+umount -R /mnt
 
 zpool sync
-umount -R /mnt
+
+udevadm settle
+
 zpool export server
