@@ -53,6 +53,8 @@ bindkey '^L' clear_screen
 
 alias sudo=doas
 
+alias p=pfetch
+
 alias grep="grep --color=auto"
 alias diff="diff --color=auto"
 
