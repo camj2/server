@@ -88,7 +88,7 @@ provider cloudflare.com {
 
 <!-- Endpoint -->
 
-Generate:
+Generate peers:
 
 <!-- https://en.wikipedia.org/wiki/Reserved_IP_addresses -->
 
@@ -97,9 +97,7 @@ Generate:
 <!-- https://www.ibm.com/docs/en/ts3500-tape-library?topic=formats-subnet-masks-ipv4-prefixes-ipv6#d78581e83 -->
 
 ```
-./tools/wg-gen -h # usage
-
-./tools/wg-gen -r -t <peer_total> <endpoint>:<port>
+./tools/wg-gen -e <endpoint>:<port> phone laptop computer backup
 ```
 
 Add to rootfs:
@@ -292,6 +290,26 @@ zfs rollback -R server/home@base
 
 reboot
 ```
+
+## `wg-gen`
+
+### Flags
+
+`-o <dir>`: output (default: `./wireguard`)
+
+`-e <host>:<port>`: endpoint (required)
+
+`-p <port>`: listening port (default: `51820`)
+
+`-P <prefix>`: [IPv6 64-bit ULA prefix](https://www.unique-local-ipv6.com/) (default: random)
+
+`-g`: generate prefix (debug)
+
+### Env
+
+`WG_ENDPOINT`
+
+`WG_PREFIX`
 
 ## LICENSE
 
