@@ -135,8 +135,15 @@ ln -sf "$ZONE" /mnt/etc/localtime
   printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$BOOTFS"
 } >> /mnt/etc/fstab
 
-rsync -a --chown root:root ./rootfs/home/server/ /mnt/root/ # user
 rsync -a --chown=root:root ./ /mnt/root/                    # repo
+rsync -a --chown root:root ./rootfs/home/server/ /mnt/root/ # user
+
+if [ -n "$USB_USERFS_OVERLAY" ]; then
+  rsync -a --chown=root:root "$USB_USERFS_OVERLAY"/ /mnt/root/ # custom user files
+fi
+
+chmod 750 /mnt/root
+chmod 700 /mnt/root/.ssh # fix
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
 
