@@ -24,7 +24,7 @@ gen_ip() {
 }
 
 gen_wg() {
-  HOST_ADDR=$(gen_ip 1 server)
+  HOST_IP=$(gen_ip 1 server)
 
   HOST_KEY=$(wg genkey)
   HOST_PUB=$(echo "$HOST_KEY" | wg pubkey)
@@ -32,7 +32,7 @@ gen_wg() {
   {
     echo "[Interface]"
     echo "PrivateKey = ${HOST_KEY}"
-    echo "Address = ${HOST_ADDR}/64"
+    echo "Address = ${HOST_IP}/64"
     echo "ListenPort = ${HOST_PORT}"
   } > 1-server.conf
 
@@ -41,7 +41,7 @@ gen_wg() {
     int=$((int + 1))
     name="${int}-${peer}"
 
-    PEER_ADDR=$(gen_ip "$int" "$peer")
+    PEER_IP=$(gen_ip "$int" "$peer")
 
     PSK=$(wg genpsk)
 
@@ -56,14 +56,14 @@ gen_wg() {
       echo "[Peer]"
       echo "PublicKey = ${PEER_PUB}"
       echo "PresharedKey = ${PSK}"
-      echo "AllowedIPs = ${PEER_ADDR}/128"
+      echo "AllowedIPs = ${PEER_IP}/128"
     } >> 1-server.conf
 
     {
       echo "[Interface]"
       echo "PrivateKey = ${PEER_KEY}"
-      echo "Address = ${PEER_ADDR}/128"
-      echo "DNS = ${HOST_ADDR}"
+      echo "Address = ${PEER_IP}/128"
+      echo "DNS = ${HOST_IP}"
 
       echo
 
