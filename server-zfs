@@ -74,17 +74,17 @@ zfs mount server/home
 
 udevadm trigger
 
-mkdir /mnt/boot
+mkdir -p /mnt/boot
 mount -o noatime "${SD_CARD}-part1" /mnt/boot
 
 for fs in dev proc sys; do
-  mkdir /mnt/"$fs"
+  mkdir -p /mnt/"$fs"
   mount --rbind /"$fs" /mnt/"$fs"
   mount --make-rslave /mnt/"$fs"
 done
 
-mkdir /mnt/tmp
-mount -t tmpfs tmpfs /mnt/tmp
+mkdir -p /mnt/tmp
+mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
 
 # void
 
