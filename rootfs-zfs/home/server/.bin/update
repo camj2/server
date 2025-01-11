@@ -41,8 +41,8 @@ xbps-remove -yO
 mount -o remount,ro /boot
 
 {
-  zfs list -t snapshot -s creation -o name -H "$ZFS_ROOT" | grep @update_ | head -n -15
-  zfs list -t snapshot -s creation -o name -H "$ZFS_HOME" | grep @update_ | head -n -15
+  zfs list -t snapshot -s creation -o name -H "$ZFS_ROOT" | grep @update_ | head -n -10
+  zfs list -t snapshot -s creation -o name -H "$ZFS_HOME" | grep @update_ | head -n -10
 } |
   while IFS= read -r snap; do
     zfs destroy "$snap" || continue
