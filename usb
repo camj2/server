@@ -117,7 +117,7 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /mnt/etc/ssh
 printf "root:voidlinux\n" | chroot /mnt /bin/chpasswd -c SHA512
 chroot /mnt /bin/chsh -s /bin/zsh
 
-printf "server\n" > /mnt/etc/hostname
+printf "void\n" > /mnt/etc/hostname
 ln -sf "$ZONE" /mnt/etc/localtime
 
 {
