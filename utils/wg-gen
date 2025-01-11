@@ -125,6 +125,10 @@ if [ $# -eq 0 ]; then
   die "peer name(s) required"
 fi
 
+if [ $# -ge 65535 ]; then
+  die "too many peers (whoa)" # hex: ffff
+fi
+
 if [ -z "$WG_ENDPOINT" ]; then
   die "endpoint required"
 fi
