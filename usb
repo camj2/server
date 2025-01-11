@@ -42,10 +42,6 @@ if [ ! -d rootfs-zfs ]; then
   die "directory 'rootfs-zfs': not found"
 fi
 
-if [ ! -d rootfs-usb ]; then
-  die "directory 'rootfs-usb': not found"
-fi
-
 set -x
 
 # format
@@ -117,6 +113,9 @@ sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /mnt/etc/ssh
 printf "root:voidlinux\n" | chroot /mnt /bin/chpasswd -c SHA512
 chroot /mnt /bin/chsh -s /bin/zsh
 
+sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
+printf "disable_splash=1\n" >> /mnt/boot/config.txt
+
 printf "void\n" > /mnt/etc/hostname
 ln -sf "$ZONE" /mnt/etc/localtime
 
@@ -141,11 +140,9 @@ ln -sf "$ZONE" /mnt/etc/localtime
   printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$BOOTFS"
 } >> /mnt/etc/fstab
 
-rsync -a --chown=root:root ./rootfs-usb/ /mnt/ # usb files
-rsync -a --chown=root:root ./ /mnt/root/       # repo files
-chmod 750 /mnt/root                            # fix
-
-sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
+rsync -a --chown=root:root ./rootfs/home/server/ /mnt/root/ # user files
+rsync -a --chown=root:root ./ /mnt/root/                    # repo files
+chmod 750 /mnt/root                                         # fix
 
 sync
 umount -R /mnt
