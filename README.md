@@ -42,6 +42,8 @@ https://portforward.com/
 
 https://ipv4.amibehindaproxy.com/
 
+<!-- https://github.com/onemarcfifty/cheat-sheets/blob/main/networking/ipv6.md -->
+
 <!-- https://techoverflow.net/2021/07/09/what-does-wireguard-allowedips-actually-do/ -->
 
 Use [`cloudflared`](https://github.com/cloudflare/cloudflared)
