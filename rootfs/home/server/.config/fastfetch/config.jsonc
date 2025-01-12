@@ -7,7 +7,6 @@
     "kernel",
     "uptime",
     "loadavg",
-    "processes",
     "packages",
     "shell",
     "cpu",
