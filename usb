@@ -144,4 +144,5 @@ rsync -a --chown=root:root ./ /mnt/root/                    # repo files
 chmod 750 /mnt/root                                         # fix
 
 sync
+
 umount -R /mnt

@@ -208,4 +208,5 @@ chroot /mnt /bin/xbps-reconfigure -fa
 # unmount
 
 sync
+
 umount -R /mnt
