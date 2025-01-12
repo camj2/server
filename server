@@ -49,7 +49,7 @@ mkfs.f2fs -i -O extra_attr,inode_checksum,sb_checksum,compression,encrypt "${SD_
 mount -o noatime "${SD_CARD}-part2" /mnt
 
 mkdir -p /mnt/boot
-mount -o noatime "${SD_CARD}-part1" /mnt/boot
+mount -o discard,noatime "${SD_CARD}-part1" /mnt/boot
 
 for fs in dev proc sys; do
   mkdir -p /mnt/"$fs"

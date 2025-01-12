@@ -75,7 +75,7 @@ zfs mount server/home
 udevadm trigger
 
 mkdir -p /mnt/boot
-mount -o noatime "${SD_CARD}-part1" /mnt/boot
+mount -o discard,noatime "${SD_CARD}-part1" /mnt/boot
 
 for fs in dev proc sys; do
   mkdir -p /mnt/"$fs"
