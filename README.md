@@ -2,8 +2,6 @@
 
 Void Linux based Unbound Wireguard server for Raspberry Pi.
 
-<!-- https://github.com/camj2/terraria-linux -->
-
 Related:
 
 * Raspberry Pi 3/4/5
