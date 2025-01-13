@@ -2,25 +2,34 @@
 
 set -e
 
-{
-  # ads ->
+fmt() {
+  while [ $# -gt 0 ]; do
+    curl -fsSL "$1"
+    shift
+  done |
+    tr '[:upper:]' '[:lower:]' |
+    sed -r \
+      -e 's/\r$//' \
+      -e 's/\s*!.*//g' \
+      -e 's/\s*\[.*//g' \
+      -e '/[a-z]\#[$?@]{0,1}\#/d' \
+      -e 's/\s*#.*//g' \
+      -e 's/^.*\s+//g' \
+      -e '/^$/d' |
+    sort -u
+}
 
-  # curl -sS https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts
+unbound_fmt() {
+  awk '{print "local-zone: " $1 " always_null"}'
+}
 
-  # ads + porn ->
-
-  curl -sS https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts
-  curl -sS https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
-} |
-  tr '[:upper:]' '[:lower:]' |
-  sed -r \
-    -e 's/\r$//' \
-    -e 's/\s*!.*//g' \
-    -e 's/\s*\[.*//g' \
-    -e '/[a-z]\#[$?@]{0,1}\#/d' \
-    -e 's/\s*#.*//g' \
-    -e 's/^.*\s+//g' \
-    -e '/^$/d' |
-  sort -u | awk '{print "local-zone: " $1 " always_null"}' > deny.conf
+if [ $# -gt 0 ]; then
+  fmt "$@"
+else
+  fmt \
+    https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts \
+    https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
+fi |
+  unbound_fmt > deny.conf
 
 wc -l < deny.conf
