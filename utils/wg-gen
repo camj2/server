@@ -2,8 +2,13 @@
 
 set -e
 
-OUTPUT="./wireguard"
-HOST_PORT=51820
+OUTPUT='./wireguard'
+
+WG_PORT=51820 # default wireguard port
+WG_PREFIX=
+
+HOST_ENDPOINT=
+HOST_PORT="$WG_PORT"
 
 gen_pre() {
   num1=$(openssl rand -hex 1)
@@ -37,18 +42,44 @@ gen_wg() {
   } > 1-server.conf
 
   int=1
-  for peer in "$@"; do
+  while [ $# -gt 0 ]; do
     int=$((int + 1))
+    peer="$1"
     name="${int}-${peer}"
+    shift
 
     PEER_IP=$(gen_ip "$int" "$peer")
 
     PSK=$(wg genpsk)
-
     PEER_KEY=$(wg genkey)
     PEER_PUB=$(echo "$PEER_KEY" | wg pubkey)
 
+    PEER_ENDPOINT=
+    PEER_PORT="$WG_PORT"
+    PEER_KEEP=
+    while getopts e:s:p:k: opt; do
+      case $opt in
+        e)
+          HOST_ENDPOINT="$OPTARG"
+          ;;
+        s)
+          PEER_ENDPOINT="$OPTARG"
+          ;;
+        p)
+          PEER_PORT="$OPTARG"
+          ;;
+        k)
+          PEER_KEEP="$OPTARG" # recommended value (if set): 25
+          ;;
+        *)
+          die "unknown option"
+          ;;
+      esac
+    done
+    shift $((OPTIND - 1))
+
     {
+
       echo
 
       echo "# ${peer}"
@@ -57,13 +88,19 @@ gen_wg() {
       echo "PublicKey = ${PEER_PUB}"
       echo "PresharedKey = ${PSK}"
       echo "AllowedIPs = ${PEER_IP}/128"
+
+      [ -n "${PEER_ENDPOINT}" ] && echo "Endpoint = ${PEER_ENDPOINT}"
+
     } >> 1-server.conf
 
     {
+
       echo "[Interface]"
       echo "PrivateKey = ${PEER_KEY}"
       echo "Address = ${PEER_IP}/128"
       echo "DNS = ${HOST_IP}"
+
+      [ -n "${PEER_ENDPOINT}" ] && echo "ListenPort = ${PEER_PORT}"
 
       echo
 
@@ -71,7 +108,10 @@ gen_wg() {
       echo "PublicKey = ${HOST_PUB}"
       echo "PresharedKey = ${PSK}"
       echo "AllowedIPs = ${WG_PREFIX}::/64"
-      echo "Endpoint = ${WG_ENDPOINT}"
+      echo "Endpoint = ${HOST_ENDPOINT}"
+
+      [ -n "${PEER_KEEP}" ] && echo "PersistentKeepalive = ${PEER_KEEP}"
+
     } > "${name}.conf"
 
     qrencode -r "${name}.conf" -o "${name}.png"
@@ -94,7 +134,7 @@ while getopts o:e:p:P:g opt; do
       OUTPUT="$OPTARG"
       ;;
     e)
-      WG_ENDPOINT="$OPTARG"
+      HOST_ENDPOINT="$OPTARG"
       ;;
     p)
       HOST_PORT="$OPTARG"
@@ -126,20 +166,17 @@ if [ $# -eq 0 ]; then
 fi
 
 if [ $# -ge 65535 ]; then
-  die "too many peers (whoa)" # hex: ffff
+  die "too many peers (whoa)" # hex value cannot exceed: ffff
 fi
 
-if [ -z "$WG_ENDPOINT" ]; then
+if [ -z "$HOST_ENDPOINT" ]; then
   die "endpoint required"
 fi
 
-if [ -z "$WG_PREFIX" ]; then
-  WG_PREFIX=$(gen_pre)
-fi
-
-mkdir -m 700 "$OUTPUT"
+mkdir -m 700 -- "$OUTPUT"
 cd -- "$OUTPUT"
 
+[ -z "$WG_PREFIX" ] && WG_PREFIX=$(gen_pre)
 gen_wg "$@"
 
 column -t -o " " .unbound.conf > unbound.conf

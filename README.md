@@ -278,22 +278,34 @@ reboot
 
 `-p <port>`: listening port (default: `51820`)
 
-`-P <prefix>`: [IPv6 64-bit ULA prefix](https://www.unique-local-ipv6.com/) (default: random)
+`-P <prefix>`: [IPv6 ULA 64-bit prefix](https://www.unique-local-ipv6.com/) (default: random)
 
 `-g`: generate prefix (debug)
 
-### Env
+### Flags (peer specific)
 
-`WG_ENDPOINT`
+`-e <host>:<port>`: override the endpoint given above
 
-`WG_PREFIX`
+`-s <host>:<port>`: peer endpoint (optional)
 
+`-p <port>`: listening port (ignored without `-s`, default: `51820`)
 
-<!-- `PersistentKeepalive = 25` -->
+`-k <int>`: keepalive (recommended value: `25`)
 
-<!-- `ListenPort = 51820` -->
+### Usage
 
-<!-- `Endpoint = <host>:<port>` -->
+```
+wg-gen -e wg.test.com:443 \
+  phone \
+  laptop \
+    -k 25 \
+  computer \
+    -e 10.0.0.2:51820 \
+    -s 10.0.0.4:51820 \
+  backup \
+    -e 10.0.0.2:51820 \
+    -s 10.0.0.3:51820
+```
 
 ## LICENSE
 
