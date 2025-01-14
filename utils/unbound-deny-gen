@@ -26,9 +26,7 @@ unbound_fmt() {
 if [ $# -gt 0 ]; then
   fmt "$@"
 else
-  fmt \
-    https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts \
-    https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
+  fmt https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
 fi |
   unbound_fmt > deny.conf
 
