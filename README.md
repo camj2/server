@@ -174,7 +174,11 @@ ssh server
 **Warning**: This will completely wipe the USB drive!
 
 ```
-./usb <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<usb_drive>
+./usb \
+  -d <default_route> \
+  -i <ip_address> \
+  -z /usr/share/zoneinfo/<timezone> \
+  /dev/disk/by-id/<usb_drive>
 ```
 
 <!-- default_route = router ipv4 address -->
@@ -189,7 +193,11 @@ Check `date` until the clock is correct.
 **Warning**: This will completely wipe the SD card!
 
 ```
-./server <default_route> <ip_address> /usr/share/zoneinfo/<timezone> /dev/disk/by-id/<sd_card>
+./server \
+  -d <default_route> \
+  -i <ip_address> \
+  -z /usr/share/zoneinfo/<timezone> \
+  /dev/disk/by-id/<sd_card>
 ```
 
 **Note**: Use `./server-zfs` instead if you wish to use zfs rather than f2fs.

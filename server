@@ -1,70 +1,114 @@
 #!/bin/sh
 
-set -e
-
-if [ $# -ne 4 ]; then
-  exit 1
-fi
-
-ROUTE="$1"
-ADDR="$2"
-ZONE="$3"
-SD_CARD="$4"
+set -ex
 
 cd -- "${0%/*}"
 
 die() {
-  printf "server: %s\n" "$*" >&2
+  printf '%b=> %s: %s%b\n' '\033[1;31m' "${0##*/}" "$*" '\033[0;00m' >&2
   exit 1
 }
 
-if [ "$(uname -m)" != aarch64 ]; then
+HOST=$(uname -m)
+
+GATE=
+ADDR=
+
+ZONE='/usr/share/zoneinfo/UTC'
+
+REPO='https://repo-fastly.voidlinux.org/current/aarch64'
+
+MORE=
+
+while getopts d:i:z:r:a:f opt; do
+  case $opt in
+    d)
+      GATE="$OPTARG"
+      ;;
+    i)
+      ADDR="$OPTARG"
+      ;;
+    z)
+      ZONE="$OPTARG"
+      ;;
+    r)
+      REPO="$OPTARG"
+      ;;
+    a)
+      MORE="$OPTARG"
+      ;;
+    f)
+      HOST='aarch64'
+      ;;
+    *)
+      die "unknown option"
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+SD_CARD="$1"
+
+if [ ! -r rootfs ]; then
+  die "server files not found"
+fi
+
+if [ -n "$MORE" ] && [ ! -r "$MORE" ]; then
+  die "server files not found"
+fi
+
+if [ ! -r "$ZONE" ]; then
+  die "timezone not found"
+fi
+
+if [ ! -r "$SD_CARD" ]; then
+  die "sd card not found"
+fi
+
+if [ "$HOST" != aarch64 ]; then
   die "unsupported hardware"
 fi
-
-if [ ! -b "$SD_CARD" ]; then
-  die "sd card '$SD_CARD': not found"
-fi
-
-if [ ! -d rootfs ]; then
-  die "directory 'rootfs': not found"
-fi
-
-set -x
 
 # format
 
 blkdiscard -f "$SD_CARD"
-printf ", 512M, c\n," | sfdisk "$SD_CARD"
+printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
 BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
 ROOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
-mkfs.f2fs -i -O extra_attr,inode_checksum,sb_checksum,compression,encrypt "${SD_CARD}-part2"
+mkfs.f2fs -i -O 'extra_attr,inode_checksum,sb_checksum,compression,encrypt' "${SD_CARD}-part2"
+F2FS_OPTS='compress_algorithm=lz4,compress_chksum,gc_merge,atgc,noatime'
 
 # mount
 
-mount -o noatime "${SD_CARD}-part2" /mnt
+mount -o "$F2FS_OPTS" "${SD_CARD}-part2" /mnt
 
-mkdir -p /mnt/boot
+mkdir /mnt/boot
 mount -o discard,noatime "${SD_CARD}-part1" /mnt/boot
 
-for fs in dev proc sys; do
-  mkdir -p /mnt/"$fs"
-  mount --rbind /"$fs" /mnt/"$fs"
-  mount --make-rslave /mnt/"$fs"
-done
+mkdir /mnt/dev
+mount --rbind /dev /mnt/dev
+mount --make-rslave /mnt/dev
 
-mkdir -p /mnt/tmp
+mkdir /mnt/sys
+mount --rbind /sys /mnt/sys
+mount --make-rslave /mnt/sys
+
+mkdir /mnt/proc
+mount --rbind /proc /mnt/proc
+mount --make-rslave /mnt/proc
+
+mkdir /mnt/tmp
 mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
 
 # void
 
 mkdir -p /mnt/etc/xbps.d
 
-printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/etc/xbps.d/00-repository-main.conf
+printf "repository=%s\n" "$REPO" > /mnt/etc/xbps.d/00-repository-main.conf
 
 {
   printf "syslog=false\n"
@@ -76,12 +120,11 @@ printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/e
 mkdir -p /mnt/var/db/xbps/keys
 cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/current/aarch64 -r /mnt \
+XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
   base-system \
   bat \
   bind-utils \
   bottom \
-  cbonsai \
   chrony \
   curl \
   fastfetch \
@@ -108,32 +151,32 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
   wireguard-tools \
   zsh
 
-ln -sf /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/rngd /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/snooze-daily /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/snooze-hourly /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/snooze-monthly /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/snooze-weekly /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/socklog-unix /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/dhcpcd /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
-ln -sf /etc/sv/inadyn /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/rngd /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/snooze-daily /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/snooze-hourly /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/snooze-monthly /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/snooze-weekly /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/socklog-unix /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/dhcpcd /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/unbound /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/wireguard /mnt/etc/runit/runsvdir/default/
+ln -fs /etc/sv/inadyn /mnt/etc/runit/runsvdir/default/
 
 if [ -f /mnt/etc/default/libc-locales ]; then
-  sed -i "/en_US.UTF-8 UTF-8/s/^#//g" /mnt/etc/default/libc-locales
-  sed -i "/en_US ISO-8859-1/s/^#//g" /mnt/etc/default/libc-locales
+  sed -i '/en_US.UTF-8 UTF-8/s/^#//g' /mnt/etc/default/libc-locales
+  sed -i '/en_US ISO-8859-1/s/^#//g' /mnt/etc/default/libc-locales
   chroot /mnt /bin/xbps-reconfigure -f glibc-locales
 fi
 
 printf "server\n" > /mnt/etc/hostname
-ln -sf "$ZONE" /mnt/etc/localtime
+ln -fs "$ZONE" /mnt/etc/localtime
 
-printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /mnt/etc/fstab | tr -s " ")" > /mnt/etc/fstab # pretty
+sed -i 's/[[:space:]]/ /g;s/ \+/ /g;/^#/!d' /mnt/etc/fstab
 {
-  printf "PARTUUID=%s / f2fs compress_algorithm=lz4,compress_chksum,gc_merge,atgc,noatime 0 1\n" "$ROOTFS"
+  printf "PARTUUID=%s / f2fs %s 0 1\n" "$ROOTFS" "$F2FS_OPTS"
   printf "PARTUUID=%s /boot vfat ro,discard,noatime 0 2\n" "$BOOTFS"
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
 } >> /mnt/etc/fstab
@@ -144,12 +187,15 @@ printf "%s\n" "$(sed 's/[[:space:]]/ /g;/^#/!d' /mnt/etc/fstab | tr -s " ")" > /
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /mnt/etc/rc.local
 
-{
-  printf "\n"
-  printf "interface eth0\n"
-  printf "static ip_address=%s/24\n" "$ADDR"
-  printf "static routers=%s\n" "$ROUTE"
-} >> /mnt/etc/dhcpcd.conf
+if [ -n "$GATE" ] && [ -n "$ADDR" ]; then
+  {
+    printf "\n"
+    printf "interface eth0\n"
+    printf "static ip_address=%s/24\n" "$ADDR"
+    printf "static routers=%s\n" "$GATE"
+    printf "static domain_name_servers=%s\n" "$GATE"
+  } >> /mnt/etc/dhcpcd.conf
+fi
 
 printf "resolvconf=no\n" > /mnt/etc/resolvconf.conf # wireguard-tools
 
@@ -167,7 +213,7 @@ printf "net.ipv6.conf.all.forwarding = 1\n" >> /mnt/etc/sysctl.conf
 
 # unbound
 
-curl -s -o /mnt/etc/unbound/root.hints https://www.internic.net/domain/named.root
+curl -fsS -o /mnt/etc/unbound/root.hints https://www.internic.net/domain/named.root
 ln -f /mnt/etc/dns/root.key /mnt/etc/unbound/
 
 # inadyn
@@ -187,23 +233,24 @@ chroot /mnt /bin/install -d -m 700 -o server -g server /home/server
 chroot /mnt /bin/passwd -dl root
 chroot /mnt /bin/passwd -dl server
 
+{
+  printf "PermitRootLogin yes\n"
+  printf "PasswordAuthentication no\n"
+  printf "PrintLastLog no\n"
+} > /mnt/etc/ssh/sshd_config.d/login.conf
+
 chroot /mnt /bin/ssh-keygen -A
 
-# sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/g" /mnt/etc/ssh/sshd_config
-sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /mnt/etc/ssh/sshd_config
-sed -i "s/#PrintLastLog yes/PrintLastLog no/g" /mnt/etc/ssh/sshd_config
+# setup
 
-rsync -a --chown=root:root rootfs/ /mnt/ # server files
+rsync -a --chown=root:root rootfs/ /mnt/                    # server files
+[ -n "$MORE" ] && rsync -a --chown=root:root "$MORE"/ /mnt/ # server files (custom)
 
-if [ -n "$SERVER_ROOTFS_OVERLAY" ]; then
-  rsync -a --chown=root:root "$SERVER_ROOTFS_OVERLAY"/ /mnt/ # custom server files
-fi
+sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
 
-sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt # fstab
+chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # fix
 
-chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # inadyn
-
-chroot /mnt /bin/chown -R server:server /home/server
+chroot /mnt /bin/chown -R server:server /home/server      # fix
 chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # fix
 
 chroot /mnt /bin/xbps-reconfigure -fa

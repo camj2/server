@@ -48,5 +48,5 @@ mount -o remount,ro /boot
     zfs destroy "$snap" || continue
   done
 
-curl -sS -o /etc/unbound/root.hints https://www.internic.net/domain/named.root
+curl -fsS -o /etc/unbound/root.hints https://www.internic.net/domain/named.root
 ln -f /etc/dns/root.key /etc/unbound/

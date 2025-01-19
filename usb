@@ -1,48 +1,64 @@
 #!/bin/sh
 
-set -e
-
-if [ $# -ne 4 ]; then
-  exit 1
-fi
-
-ROUTE="$1"
-ADDR="$2"
-ZONE="$3"
-USB="$4"
+set -ex
 
 cd -- "${0%/*}"
 
 die() {
-  printf "usb: %s\n" "$*" >&2
+  printf '%b=> %s: %s%b\n' '\033[1;31m' "${0##*/}" "$*" '\033[0;00m' >&2
   exit 1
 }
 
-if ! grep -q binfmt_misc /proc/mounts; then
+HOST=$(uname -m)
+
+GATE=
+ADDR=
+
+ZONE='/usr/share/zoneinfo/UTC'
+
+REPO='https://repo-fastly.voidlinux.org/current/aarch64'
+
+while getopts d:i:z:r:f opt; do
+  case $opt in
+    d)
+      GATE="$OPTARG"
+      ;;
+    i)
+      ADDR="$OPTARG"
+      ;;
+    z)
+      ZONE="$OPTARG"
+      ;;
+    r)
+      REPO="$OPTARG"
+      ;;
+    f)
+      HOST='aarch64'
+      ;;
+    *)
+      die "unknown option"
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+USB="$1"
+
+if [ ! -r rootfs ] || [ ! -r rootfs-zfs ]; then
+  die "server files not found"
+fi
+
+if [ ! -r "$ZONE" ]; then
+  die "timezone not found"
+fi
+
+if [ ! -r "$USB" ]; then
+  die "usb drive not found"
+fi
+
+if [ "$HOST" != aarch64 ] && ! grep -q binfmt_misc /proc/mounts; then
   die "unsupported hardware"
 fi
-
-if [ ! -b "$USB" ]; then
-  die "usb drive '$USB': not found"
-fi
-
-if [ ! -x server ]; then
-  die "script 'server': not found"
-fi
-
-if [ ! -x server-zfs ]; then
-  die "script 'server-zfs': not found"
-fi
-
-if [ ! -d rootfs ]; then
-  die "directory 'rootfs': not found"
-fi
-
-if [ ! -d rootfs-zfs ]; then
-  die "directory 'rootfs-zfs': not found"
-fi
-
-set -x
 
 # format
 
@@ -60,23 +76,29 @@ mkfs.xfs -f "${USB}-part2"
 
 mount -o noatime "${USB}-part2" /mnt
 
-mkdir -p /mnt/boot
+mkdir /mnt/boot
 mount -o noatime "${USB}-part1" /mnt/boot
 
-for fs in dev proc sys; do
-  mkdir -p /mnt/"$fs"
-  mount --rbind /"$fs" /mnt/"$fs"
-  mount --make-rslave /mnt/"$fs"
-done
+mkdir /mnt/dev
+mount --rbind /dev /mnt/dev
+mount --make-rslave /mnt/dev
 
-mkdir -p /mnt/tmp
-mount -o nosuid,nodev -t tmpfs tmpfs /mnt/tmp
+mkdir /mnt/sys
+mount --rbind /sys /mnt/sys
+mount --make-rslave /mnt/sys
+
+mkdir /mnt/proc
+mount --rbind /proc /mnt/proc
+mount --make-rslave /mnt/proc
+
+mkdir /mnt/tmp
+mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
 
 # void
 
 mkdir -p /mnt/etc/xbps.d
 
-printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/etc/xbps.d/00-repository-main.conf
+printf "repository=%s\n" "$REPO" > /mnt/etc/xbps.d/00-repository-main.conf
 
 {
   printf "ignorepkg=linux\n"
@@ -86,7 +108,7 @@ printf "repository=https://repo-fastly.voidlinux.org/current/aarch64\n" > /mnt/e
 mkdir -p /mnt/var/db/xbps/keys
 cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/current/aarch64 -r /mnt \
+XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
   base-system \
   rpi-kernel \
   rpi-kernel-headers \
@@ -103,9 +125,10 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R https://repo-fastly.voidlinux.org/cu
 
 ln -sf /etc/sv/rngd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
+ln -sf /etc/sv/dhcpcd /mnt/etc/runit/runsvdir/default/
 ln -sf /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
 
-sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /mnt/etc/ssh/sshd_config
+printf "PermitRootLogin yes\n" > /mnt/etc/ssh/sshd_config.d/login.conf
 printf "root:voidlinux\n" | chroot /mnt /bin/chpasswd -c SHA512
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
@@ -114,26 +137,36 @@ printf "disable_splash=1\n" >> /mnt/boot/config.txt
 printf "void\n" > /mnt/etc/hostname
 ln -sf "$ZONE" /mnt/etc/localtime
 
+sed -i 's/[[:space:]]/ /g;s/ \+/ /g;/^#/!d' /mnt/etc/fstab
 {
-  printf "nameserver 1.1.1.1\n"
-  printf "nameserver 1.0.0.1\n"
-} > /mnt/etc/resolv.conf
+  printf "PARTUUID=%s / xfs noatime 0 0\n" "$ROOTFS"
+  printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$BOOTFS"
+  printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
+} >> /mnt/etc/fstab
 
 {
-  printf "\n"
-  printf "ip link set dev eth0 up\n"
-  printf "ip addr add %s/24 brd + dev eth0\n" "$ADDR"
-  printf "ip route add default via %s\n" "$ROUTE"
-
   printf "\n"
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /mnt/etc/rc.local
 
+if [ -n "$GATE" ] && [ -n "$ADDR" ]; then
+  {
+    printf "\n"
+    printf "nohook resolv.conf\n"
+
+    printf "\n"
+    printf "interface eth0\n"
+    printf "static ip_address=%s/24\n" "$ADDR"
+    printf "static routers=%s\n" "$GATE"
+    printf "static domain_name_servers=%s\n" "$GATE"
+  } >> /mnt/etc/dhcpcd.conf
+fi
+
 {
-  printf "PARTUUID=%s / xfs noatime 0 1\n" "$ROOTFS"
-  printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$BOOTFS"
-} >> /mnt/etc/fstab
+  printf "nameserver 1.1.1.1\n"
+  printf "nameserver 1.0.0.1\n"
+} > /mnt/etc/resolv.conf
 
 rsync -a --chown=root:root ./ /mnt/root/ # server files
 
