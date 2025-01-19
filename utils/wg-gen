@@ -7,7 +7,7 @@ OUTPUT='./wireguard'
 WG_PORT=51820 # default wireguard port
 WG_PREFIX=
 
-HOST_ENDPOINT=
+WG_ENDPOINT=
 HOST_PORT="$WG_PORT"
 
 gen_pre() {
@@ -54,6 +54,7 @@ gen_wg() {
     PEER_KEY=$(wg genkey)
     PEER_PUB=$(echo "$PEER_KEY" | wg pubkey)
 
+    HOST_ENDPOINT="$WG_ENDPOINT"
     PEER_ENDPOINT=
     PEER_PORT="$WG_PORT"
     PEER_KEEP=
@@ -134,7 +135,7 @@ while getopts o:e:p:P:g opt; do
       OUTPUT="$OPTARG"
       ;;
     e)
-      HOST_ENDPOINT="$OPTARG"
+      WG_ENDPOINT="$OPTARG"
       ;;
     p)
       HOST_PORT="$OPTARG"
@@ -169,7 +170,7 @@ if [ $# -ge 65535 ]; then
   die "too many peers (whoa)" # hex value cannot exceed: ffff
 fi
 
-if [ -z "$HOST_ENDPOINT" ]; then
+if [ -z "$WG_ENDPOINT" ]; then
   die "endpoint required"
 fi
 
