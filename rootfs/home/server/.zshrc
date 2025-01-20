@@ -61,6 +61,8 @@ alias diff="diff --color=auto"
 
 alias bat="bat --paging=never --theme=base16 --tabs=4"
 
+alias tree="tree -a"
+
 alias ls="lsd -A"
 alias l="lsd -la"
 alias la="lsd -la"
