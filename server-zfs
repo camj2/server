@@ -164,7 +164,6 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
   runit-nftables \
   snooze \
   socklog-void \
-  tree \
   unbound \
   vsv \
   wireguard-tools \
