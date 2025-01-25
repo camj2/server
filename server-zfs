@@ -49,19 +49,19 @@ shift $((OPTIND - 1))
 
 SD_CARD="$1"
 
-if [ ! -r rootfs ] || [ ! -r rootfs-zfs ]; then
+if [ ! -d rootfs ] || [ ! -d rootfs-zfs ]; then
   die "server files not found"
 fi
 
-if [ -n "$MORE" ] && [ ! -r "$MORE" ]; then
+if [ -n "$MORE" ] && [ ! -d "$MORE" ]; then
   die "server files not found"
 fi
 
-if [ ! -r "$ZONE" ]; then
+if [ ! -f "$ZONE" ]; then
   die "timezone not found"
 fi
 
-if [ ! -r "$SD_CARD" ]; then
+if [ ! -b "$SD_CARD" ]; then
   die "sd card not found"
 fi
 

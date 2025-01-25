@@ -44,15 +44,15 @@ shift $((OPTIND - 1))
 
 USB="$1"
 
-if [ ! -r rootfs ] || [ ! -r rootfs-zfs ]; then
+if [ ! -d rootfs ] || [ ! -d rootfs-zfs ]; then
   die "server files not found"
 fi
 
-if [ ! -r "$ZONE" ]; then
+if [ ! -f "$ZONE" ]; then
   die "timezone not found"
 fi
 
-if [ ! -r "$USB" ]; then
+if [ ! -b "$USB" ]; then
   die "usb drive not found"
 fi
 
