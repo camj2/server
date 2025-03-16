@@ -226,8 +226,6 @@ fi
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
 
-chroot /mnt /bin/chown inadyn:inadyn /etc/inadyn.conf # fix
-
 chroot /mnt /bin/chown -R server:server /home/server      # fix
 chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # fix
 
