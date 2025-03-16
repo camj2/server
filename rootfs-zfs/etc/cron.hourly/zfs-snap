@@ -7,8 +7,8 @@ date=$(date -u +%Y-%m-%d-%H%M)
 ZFS_ROOT=$(awk '$2 == "/" && $3 == "zfs" {print $1}' /proc/mounts)
 ZFS_HOME=$(awk '$2 == "/home" && $3 == "zfs" {print $1}' /proc/mounts)
 
-[ -n "$ZFS_ROOT" ]
-[ -n "$ZFS_HOME" ]
+[ "$ZFS_ROOT" ]
+[ "$ZFS_HOME" ]
 
 zfs snapshot "$ZFS_ROOT"@auto_hourly_"$date"
 zfs snapshot "$ZFS_HOME"@auto_hourly_"$date"
