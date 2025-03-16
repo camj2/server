@@ -6,7 +6,7 @@ Related:
 
 * Raspberry Pi 3/4/5
 * Void Linux (musl)
-* ZFS
+* XFS
 * Unbound
 * Wireguard
 * [Cloudflare](https://www.cloudflare.com/)
@@ -200,8 +200,6 @@ Check `date` until the clock is correct.
   /dev/disk/by-id/<sd_card>
 ```
 
-**Note**: Use `./server-zfs` instead if you wish to use zfs rather than f2fs.
-
 ## Notes
 
 ### Unbound
@@ -239,41 +237,6 @@ Set a password if you plan on using a display and keyboard:
 
 ```
 passwd server
-```
-
-### Encryption
-
-<!-- https://wiki.archlinux.org/title/Fscrypt -->
-
-If you are using f2fs, setup `fscrypt`: (optional)
-
-```
-fscrypt setup
-```
-
-Encrypt with:
-
-```
-fscrypt encrypt <dir>
-```
-
-Unlock with:
-
-```
-fscrypt unlock <dir>
-```
-
-### Reset
-
-If you are using zfs, you can "factory reset" the server at anytime with:
-
-**Warning**: This will wipe all data from your server!
-
-```
-zfs rollback -R server/root@base
-zfs rollback -R server/home@base
-
-reboot
 ```
 
 ## `wg-gen`

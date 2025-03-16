@@ -1,42 +1,33 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 cd -- "${0%/*}"
 
 die() {
-  printf '%b=> %s: %s%b\n' '\033[1;31m' "${0##*/}" "$*" '\033[0;00m' >&2
+  printf '%s: %s\n' "${0##*/}" "$*" >&2
   exit 1
 }
 
 HOST=$(uname -m)
 
-GATE=
-ADDR=
-
 ZONE='/usr/share/zoneinfo/UTC'
 
 REPO='https://repo-fastly.voidlinux.org/current/aarch64'
 
-while getopts d:i:z:r:f opt; do
+while getopts z:r:f opt; do
   case $opt in
-    d)
-      GATE="$OPTARG"
-      ;;
-    i)
-      ADDR="$OPTARG"
-      ;;
     z)
       ZONE="$OPTARG"
       ;;
     r)
-      REPO="$OPTARG"
+      REPO="${OPTARG}/current/aarch64"
       ;;
     f)
       HOST='aarch64'
       ;;
     *)
-      die "unknown option"
+      exit 1
       ;;
   esac
 done
@@ -44,7 +35,7 @@ shift $((OPTIND - 1))
 
 USB="$1"
 
-if [ ! -d rootfs ] || [ ! -d rootfs-zfs ]; then
+if [ ! -d rootfs ]; then
   die "server files not found"
 fi
 
@@ -60,10 +51,12 @@ if [ "$HOST" != aarch64 ] && ! grep -q binfmt_misc /proc/mounts; then
   die "unsupported hardware"
 fi
 
+set -x
+
 # format
 
 wipefs -fa "$USB"
-printf ", 512M, c\n," | sfdisk "$USB"
+printf ', 512M, c\n,' | sfdisk "$USB"
 udevadm settle
 
 BOOTFS=$(blkid -s PARTUUID -o value "${USB}-part1")
@@ -79,6 +72,9 @@ mount -o noatime "${USB}-part2" /mnt
 mkdir /mnt/boot
 mount -o noatime "${USB}-part1" /mnt/boot
 
+mkdir /mnt/tmp
+mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
+
 mkdir /mnt/dev
 mount --rbind /dev /mnt/dev
 mount --make-rslave /mnt/dev
@@ -91,9 +87,6 @@ mkdir /mnt/proc
 mount --rbind /proc /mnt/proc
 mount --make-rslave /mnt/proc
 
-mkdir /mnt/tmp
-mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
-
 # void
 
 mkdir -p /mnt/etc/xbps.d
@@ -103,12 +96,12 @@ printf "repository=%s\n" "$REPO" > /mnt/etc/xbps.d/00-repository-main.conf
 {
   printf "ignorepkg=linux\n"
   printf "ignorepkg=linux-headers\n"
-} > /mnt/etc/xbps.d/xbps.conf
+} > /mnt/etc/xbps.d/ignore.conf
 
 mkdir -p /mnt/var/db/xbps/keys
 cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
+XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   base-system \
   rpi-kernel \
   rpi-kernel-headers \
@@ -137,38 +130,25 @@ printf "disable_splash=1\n" >> /mnt/boot/config.txt
 printf "void\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
-sed -i 's/[[:space:]]/ /g;s/ \+/ /g;/^#/!d' /mnt/etc/fstab
 {
-  printf "PARTUUID=%s / xfs noatime 0 0\n" "$ROOTFS"
-  printf "PARTUUID=%s /boot vfat ro,noatime 0 2\n" "$BOOTFS"
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
-} >> /mnt/etc/fstab
+  printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS"
+  printf "PARTUUID=%s / xfs noatime 0 0\n" "$ROOTFS"
+} > /mnt/etc/fstab
 
 {
-  printf "\n"
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
-} >> /mnt/etc/rc.local
-
-if [ -n "$GATE" ] && [ -n "$ADDR" ]; then
-  {
-    printf "\n"
-    printf "nohook resolv.conf\n"
-
-    printf "\n"
-    printf "interface eth0\n"
-    printf "static ip_address=%s/24\n" "$ADDR"
-    printf "static routers=%s\n" "$GATE"
-    printf "static domain_name_servers=%s\n" "$GATE"
-  } >> /mnt/etc/dhcpcd.conf
-fi
+} > /mnt/etc/rc.local
 
 {
   printf "nameserver 1.1.1.1\n"
   printf "nameserver 1.0.0.1\n"
 } > /mnt/etc/resolv.conf
 
-rsync -a --chown=root:root ./ /mnt/root/ # server files
+printf 'OPTS="--nohook resolv.conf"\n' > /mnt/etc/sv/dhcpcd/conf
+
+rsync -a --chown=root:root ./ /mnt/root/
 
 sync
 

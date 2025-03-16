@@ -1,47 +1,38 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 cd -- "${0%/*}"
 
 die() {
-  printf '%b=> %s: %s%b\n' '\033[1;31m' "${0##*/}" "$*" '\033[0;00m' >&2
+  printf '%s: %s\n' "${0##*/}" "$*" >&2
   exit 1
 }
 
 HOST=$(uname -m)
 
-GATE=
-ADDR=
+MORE=
 
 ZONE='/usr/share/zoneinfo/UTC'
 
 REPO='https://repo-fastly.voidlinux.org/current/aarch64'
 
-MORE=
-
-while getopts d:i:z:r:a:f opt; do
+while getopts a:z:r:f opt; do
   case $opt in
-    d)
-      GATE="$OPTARG"
-      ;;
-    i)
-      ADDR="$OPTARG"
+    a)
+      MORE="$OPTARG"
       ;;
     z)
       ZONE="$OPTARG"
       ;;
     r)
-      REPO="$OPTARG"
-      ;;
-    a)
-      MORE="$OPTARG"
+      REPO="${OPTARG}/current/aarch64"
       ;;
     f)
       HOST='aarch64'
       ;;
     *)
-      die "unknown option"
+      exit 1
       ;;
   esac
 done
@@ -69,6 +60,8 @@ if [ "$HOST" != aarch64 ]; then
   die "unsupported hardware"
 fi
 
+set -x
+
 # format
 
 blkdiscard -f "$SD_CARD"
@@ -79,15 +72,17 @@ BOOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part1")
 ROOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
-mkfs.f2fs -i -O 'extra_attr,inode_checksum,sb_checksum,compression,encrypt' "${SD_CARD}-part2"
-F2FS_OPTS='compress_algorithm=lz4,compress_chksum,gc_merge,atgc,noatime'
+mkfs.xfs "${SD_CARD}-part2"
 
 # mount
 
-mount -o "$F2FS_OPTS" "${SD_CARD}-part2" /mnt
+mount -o discard,noatime "${SD_CARD}-part2" /mnt
 
 mkdir /mnt/boot
 mount -o discard,noatime "${SD_CARD}-part1" /mnt/boot
+
+mkdir /mnt/tmp
+mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
 
 mkdir /mnt/dev
 mount --rbind /dev /mnt/dev
@@ -101,26 +96,24 @@ mkdir /mnt/proc
 mount --rbind /proc /mnt/proc
 mount --make-rslave /mnt/proc
 
-mkdir /mnt/tmp
-mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
-
 # void
 
 mkdir -p /mnt/etc/xbps.d
 
 printf "repository=%s\n" "$REPO" > /mnt/etc/xbps.d/00-repository-main.conf
 
+printf "syslog=false\n" > /mnt/etc/xbps.d/xbps.conf
+
 {
-  printf "syslog=false\n"
   printf "ignorepkg=linux\n"
   printf "ignorepkg=linux-headers\n"
   printf "ignorepkg=sudo\n"
-} > /mnt/etc/xbps.d/xbps.conf
+} > /mnt/etc/xbps.d/ignore.conf
 
 mkdir -p /mnt/var/db/xbps/keys
 cp -f /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
+XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   base-system \
   bat \
   bind-utils \
@@ -128,7 +121,6 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -R "$REPO" -r /mnt \
   chrony \
   curl \
   fastfetch \
-  fscrypt \
   htop \
   inadyn \
   lsd \
@@ -172,28 +164,17 @@ fi
 printf "server\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
-sed -i 's/[[:space:]]/ /g;s/ \+/ /g;/^#/!d' /mnt/etc/fstab
 {
-  printf "PARTUUID=%s / f2fs %s 0 1\n" "$ROOTFS" "$F2FS_OPTS"
-  printf "PARTUUID=%s /boot vfat ro,discard,noatime 0 2\n" "$BOOTFS"
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
-} >> /mnt/etc/fstab
+  printf "PARTUUID=%s /boot vfat discard,noatime 0 2\n" "$BOOTFS"
+  printf "PARTUUID=%s / xfs discard,noatime 0 0\n" "$ROOTFS"
+} > /mnt/etc/fstab
 
 {
   printf "\n"
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
   printf "printf 0 > /sys/class/leds/PWR/brightness\n"
 } >> /mnt/etc/rc.local
-
-if [ -n "$GATE" ] && [ -n "$ADDR" ]; then
-  {
-    printf "\n"
-    printf "interface eth0\n"
-    printf "static ip_address=%s/24\n" "$ADDR"
-    printf "static routers=%s\n" "$GATE"
-    printf "static domain_name_servers=%s\n" "$GATE"
-  } >> /mnt/etc/dhcpcd.conf
-fi
 
 printf "resolvconf=no\n" > /mnt/etc/resolvconf.conf # wireguard-tools
 
@@ -203,18 +184,12 @@ printf "resolvconf=no\n" > /mnt/etc/resolvconf.conf # wireguard-tools
   printf "nameserver 1.0.0.1\n"
 } > /mnt/etc/resolv.conf
 
-# wireguard
-
-# printf "net.ipv4.ip_forward = 1\n" >> /mnt/etc/sysctl.conf
-printf "net.ipv4.conf.all.forwarding = 1\n" >> /mnt/etc/sysctl.conf
-printf "net.ipv6.conf.all.forwarding = 1\n" >> /mnt/etc/sysctl.conf
-
 # unbound
 
 mkdir -p /mnt/var/lib/unbound
 curl -fsS -o /mnt/var/lib/unbound/root.hints https://www.internic.net/domain/named.root
 cp -f /mnt/etc/dns/root.key /mnt/var/lib/unbound/
-chown -R _unbound:_unbound /mnt/var/lib/unbound
+chroot /mnt /bin/chown -R _unbound:_unbound /var/lib/unbound
 
 # inadyn
 
@@ -243,8 +218,11 @@ chroot /mnt /bin/ssh-keygen -A
 
 # setup
 
-rsync -a --chown=root:root rootfs/ /mnt/                    # server files
-[ -n "$MORE" ] && rsync -a --chown=root:root "$MORE"/ /mnt/ # server files (custom)
+if [ -n "$MORE" ]; then
+  rsync -a --chown=root:root rootfs/ "$MORE"/ /mnt/
+else
+  rsync -a --chown=root:root rootfs/ /mnt/
+fi
 
 sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
 
