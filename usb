@@ -66,8 +66,8 @@ wipefs -fa "$USB"
 printf ", 512M, c\n," | sfdisk "$USB"
 udevadm settle
 
-BOOTFS=$(blkid -o value -s PARTUUID "${USB}-part1")
-ROOTFS=$(blkid -o value -s PARTUUID "${USB}-part2")
+BOOTFS=$(blkid -s PARTUUID -o value "${USB}-part1")
+ROOTFS=$(blkid -s PARTUUID -o value "${USB}-part2")
 
 mkfs.vfat -F32 "${USB}-part1"
 mkfs.xfs -f "${USB}-part2"

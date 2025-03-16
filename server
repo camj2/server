@@ -75,8 +75,8 @@ blkdiscard -f "$SD_CARD"
 printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
-BOOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part1")
-ROOTFS=$(blkid -o value -s PARTUUID "${SD_CARD}-part2")
+BOOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part1")
+ROOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part2")
 
 mkfs.vfat -F32 "${SD_CARD}-part1"
 mkfs.f2fs -i -O 'extra_attr,inode_checksum,sb_checksum,compression,encrypt' "${SD_CARD}-part2"
