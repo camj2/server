@@ -1,0 +1,2 @@
+#!/bin/sh
+curl -fs -m 100 -o /var/lib/unbound/root.hints https://www.internic.net/domain/named.root

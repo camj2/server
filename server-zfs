@@ -239,8 +239,10 @@ printf "net.ipv6.conf.all.forwarding = 1\n" >> /mnt/etc/sysctl.conf
 
 # unbound
 
-curl -fsS -o /mnt/etc/unbound/root.hints https://www.internic.net/domain/named.root
-ln -f /mnt/etc/dns/root.key /mnt/etc/unbound/
+mkdir -p /mnt/var/lib/unbound
+curl -fsS -o /mnt/var/lib/unbound/root.hints https://www.internic.net/domain/named.root
+cp -f /mnt/etc/dns/root.key /mnt/var/lib/unbound/
+chown -R _unbound:_unbound /mnt/var/lib/unbound
 
 # inadyn
 
