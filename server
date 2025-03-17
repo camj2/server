@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 cd -- "${0%/*}"
 
@@ -38,7 +38,7 @@ while getopts a:z:r:f opt; do
 done
 shift $((OPTIND - 1))
 
-SD_CARD="$1"
+SD_CARD=$(readlink -f "$1")
 
 if [ ! -d rootfs ]; then
   die "server files not found"
@@ -60,26 +60,36 @@ if [ "$HOST" != aarch64 ]; then
   die "unsupported hardware"
 fi
 
-set -x
-
 # format
+
+hostname server
 
 blkdiscard -f "$SD_CARD"
 printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
-BOOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part1")
-ROOTFS=$(blkid -s PARTUUID -o value "${SD_CARD}-part2")
+mkfs.vfat -F32 -n boot "${SD_CARD}p1"
+vgcreate server "${SD_CARD}p2"
 
-mkfs.vfat -F32 "${SD_CARD}-part1"
-mkfs.xfs "${SD_CARD}-part2"
+lvcreate -L 4G -n root server
+lvcreate -L 8G -n home server
+
+mkfs.xfs -L root /dev/server/root
+mkfs.xfs -L home /dev/server/home
+
+BOOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p1")
+ROOT_UUID=$(blkid -s UUID -o value /dev/server/root)
+HOME_UUID=$(blkid -s UUID -o value /dev/server/home)
 
 # mount
 
-mount -o discard,noatime "${SD_CARD}-part2" /mnt
+mount -o discard,noatime /dev/server/root /mnt
+
+mkdir -p /mnt/home
+mount -o discard,noatime /dev/server/home /mnt/home
 
 mkdir /mnt/boot
-mount -o discard,noatime "${SD_CARD}-part1" /mnt/boot
+mount -o discard,noatime "${SD_CARD}p1" /mnt/boot
 
 mkdir /mnt/tmp
 mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
@@ -120,10 +130,12 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   bottom \
   chrony \
   curl \
+  dracut \
   fastfetch \
   htop \
   inadyn \
   lsd \
+  lvm2 \
   nano \
   nftables \
   opendoas \
@@ -139,7 +151,8 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   unbound \
   vsv \
   wireguard-tools \
-  zsh
+  zsh \
+  zstd
 
 ln -fs /etc/sv/nanoklogd /mnt/etc/runit/runsvdir/default/
 ln -fs /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
@@ -161,13 +174,24 @@ if [ -f /mnt/etc/default/libc-locales ]; then
   chroot /mnt /bin/xbps-reconfigure -f glibc-locales
 fi
 
+if [ -f /mnt/etc/lvm/lvm.conf ]; then
+  sed -i 's/# issue_discards = 0/issue_discards = 1/g' /mnt/etc/lvm/lvm.conf
+fi
+
 printf "server\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
+mkdir -p /mnt/etc/dracut.conf.d
+printf 'kernel_cmdline="root=UUID=%s rootfstype=xfs rootflags=discard,noatime"\n' "$ROOT_UUID" > /mnt/etc/dracut.conf.d/server.conf
+{
+  printf "hostonly=yes\n"
+  printf "compress=zstd\n"
+} > /mnt/etc/dracut.conf.d/compress.conf
+
 {
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
-  printf "PARTUUID=%s /boot vfat discard,noatime 0 2\n" "$BOOTFS"
-  printf "PARTUUID=%s / xfs discard,noatime 0 0\n" "$ROOTFS"
+  printf "UUID=%s /boot vfat discard,noatime 0 2\n" "$BOOT_UUID"
+  printf "UUID=%s /home xfs discard,noatime 0 0\n" "$HOME_UUID"
 } > /mnt/etc/fstab
 
 {
@@ -209,7 +233,7 @@ chroot /mnt /bin/passwd -dl root
 chroot /mnt /bin/passwd -dl server
 
 {
-  printf "PermitRootLogin yes\n"
+  printf "PermitRootLogin no\n"
   printf "PasswordAuthentication no\n"
   printf "PrintLastLog no\n"
 } > /mnt/etc/ssh/sshd_config.d/login.conf
@@ -218,16 +242,13 @@ chroot /mnt /bin/ssh-keygen -A
 
 # setup
 
+rsync -a --chown=root:root rootfs/ /mnt/
+
 if [ -n "$MORE" ]; then
-  rsync -a --chown=root:root rootfs/ "$MORE"/ /mnt/
-else
-  rsync -a --chown=root:root rootfs/ /mnt/
+  rsync -a --chown=root:root "${MORE}/" /mnt/
 fi
 
-sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
-
-chroot /mnt /bin/chown -R server:server /home/server      # fix
-chroot /mnt /bin/chmod 700 /home/server /home/server/.ssh # fix
+chroot /mnt /bin/chown -R server:server /mnt/home/server
 
 chroot /mnt /bin/xbps-reconfigure -fa
 
@@ -236,3 +257,5 @@ chroot /mnt /bin/xbps-reconfigure -fa
 sync
 
 umount -R /mnt
+
+vgchange -an server

@@ -11,7 +11,7 @@ Related:
 * Wireguard
 * [Cloudflare](https://www.cloudflare.com/)
 
-## Prerequisites
+## Pre
 
 ### Raspberry Pi 4/5
 
@@ -118,7 +118,7 @@ This essentially creates a roaming network and allows for easy access between yo
 Very useful when used in conjunction with `rsync`:
 
 ```
-rsync -aAXH --delete ~/ laptop:~/ # sync laptop with desktop
+rsync -aAXH --delete ~/ laptop:~/ # sync laptop with computer
 ```
 
 ### Unbound
@@ -152,6 +152,12 @@ ln -f deny.conf rootfs/etc/unbound/
 Add your keys to `rootfs/home/server/.ssh/authorized_keys`.
 **This is required to login**.
 
+Also make sure the correct bits are set:
+
+```
+chmod 700 rootfs/home/server rootfs/home/server/.ssh
+```
+
 <br>
 
 Add the following to `~/.ssh/config`: (optional)
@@ -167,22 +173,15 @@ This sets the username when connecting via ssh:
 ssh server
 ```
 
-## Installation
+## Install
 
 ### USB
 
 **Warning**: This will completely wipe the USB drive!
 
 ```
-./usb \
-  -d <default_route> \
-  -i <ip_address> \
-  -z /usr/share/zoneinfo/<timezone> \
-  /dev/disk/by-id/<usb_drive>
+./usb /dev/<usb_drive>
 ```
-
-<!-- default_route = router ipv4 address -->
-<!-- ip_address = server ipv4 address -->
 
 ### Server
 
@@ -193,14 +192,26 @@ Check `date` until the clock is correct.
 **Warning**: This will completely wipe the SD card!
 
 ```
-./server \
-  -d <default_route> \
-  -i <ip_address> \
-  -z /usr/share/zoneinfo/<timezone> \
-  /dev/disk/by-id/<sd_card>
+./server /dev/mmcblk0
 ```
 
 ## Notes
+
+### Update
+
+```
+xbps-install -Syu
+
+xbps-remove -yo
+xbps-remove -yO
+```
+
+Extend root volume if needed:
+
+```
+lvextend -L +4G server/root
+xfs_growfs /
+```
 
 ### Unbound
 

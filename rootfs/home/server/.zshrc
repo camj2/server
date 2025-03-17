@@ -70,3 +70,5 @@ alias lta="lsd -la --tree"
 
 alias zl="zfs list -t snapshot -s creation -o name,creation"
 alias zu="zfs list -t snapshot -s used -o name,used"
+
+alias xu="df -h -t xfs"

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+VERSION="$2"
+
+printf "initramfs initramfs-%s.img followkernel\n" "$VERSION" > boot/initramfs.txt
