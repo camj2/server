@@ -56,21 +56,21 @@ fi
 printf ', 512M, c\n,' | sfdisk "$USB"
 udevadm settle
 
-BOOTFS=$(blkid -s PARTUUID -o value "${USB}1")
-ROOTFS=$(blkid -s PARTUUID -o value "${USB}2")
+BOOT_PARTUUID=$(blkid -s PARTUUID -o value "${USB}1")
+ROOT_PARTUUID=$(blkid -s PARTUUID -o value "${USB}2")
 
 mkfs.vfat -F32 "${USB}1"
 mkfs.xfs -f "${USB}2"
 
 # mount
 
-mount -o noatime "${USB}2" /mnt
+mount "${USB}2" /mnt
 
 mkdir /mnt/boot
-mount -o noatime "${USB}1" /mnt/boot
+mount "${USB}1" /mnt/boot
 
 mkdir /mnt/tmp
-mount -o nosuid,nodev,noatime -t tmpfs tmpfs /mnt/tmp
+mount -t tmpfs tmpfs /mnt/tmp
 
 mkdir /mnt/dev
 mount --rbind /dev /mnt/dev
@@ -111,26 +111,19 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   htop \
   bottom \
   fastfetch \
-  pfetch \
-  lvm2
+  pfetch
 
 ln -fs /etc/sv/rngd /mnt/etc/runit/runsvdir/default/
 ln -fs /etc/sv/ntpd /mnt/etc/runit/runsvdir/default/
 ln -fs /etc/sv/dhcpcd /mnt/etc/runit/runsvdir/default/
 ln -fs /etc/sv/sshd /mnt/etc/runit/runsvdir/default/
 
-printf "PermitRootLogin yes\n" > /mnt/etc/ssh/sshd_config.d/login.conf
-printf "root:voidlinux\n" | chroot /mnt /bin/chpasswd -c SHA512
-
-sed -i "s/root=[^ ]*/root=PARTUUID=${ROOTFS}/" /mnt/boot/cmdline.txt
-printf "disable_splash=1\n" >> /mnt/boot/config.txt
-
 printf "void\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
-{
-  printf "PARTUUID=%s /boot vfat noatime 0 2\n" "$BOOTFS"
-} >> /mnt/etc/fstab
+printf "disable_splash=1\n" >> /mnt/boot/config.txt
+sed -i "s/root=[^ ]*/root=PARTUUID=${ROOT_PARTUUID}/" /mnt/boot/cmdline.txt
+printf "PARTUUID=%s /boot vfat defaults 0 2\n" "${BOOT_PARTUUID}" >> /mnt/etc/fstab
 
 {
   printf "printf 0 > /sys/class/leds/ACT/brightness\n"
@@ -143,6 +136,9 @@ ln -fs "$ZONE" /mnt/etc/localtime
 } > /mnt/etc/resolv.conf
 
 printf 'OPTS="--nohook resolv.conf"\n' > /mnt/etc/sv/dhcpcd/conf
+
+printf "PermitRootLogin yes\n" > /mnt/etc/ssh/sshd_config.d/login.conf
+printf "root:voidlinux\n" | chroot /mnt /bin/chpasswd -c SHA512
 
 rsync -a --chown=root:root ./ /mnt/root/
 

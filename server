@@ -62,33 +62,19 @@ fi
 
 # format
 
-hostname server
-
-### TODO: BUG: disable and export any logical volumes before wiping sd card; this could cause issues when there is a previous installation
-
 blkdiscard -f "$SD_CARD"
 printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
 mkfs.vfat -F32 -n boot "${SD_CARD}p1"
-vgcreate server "${SD_CARD}p2"
-
-lvcreate -L 4G -n root server
-lvcreate -L 8G -n home server
-
-mkfs.xfs -L root /dev/server/root
-mkfs.xfs -L home /dev/server/home
+mkfs.xfs -L root "${SD_CARD}p2"
 
 BOOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p1")
-ROOT_UUID=$(blkid -s UUID -o value /dev/server/root)
-HOME_UUID=$(blkid -s UUID -o value /dev/server/home)
+ROOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p2")
 
 # mount
 
-mount -o discard,noatime /dev/server/root /mnt
-
-mkdir -p /mnt/home
-mount -o discard,noatime /dev/server/home /mnt/home
+mount -o discard,noatime "${SD_CARD}p2" /mnt
 
 mkdir /mnt/boot
 mount -o discard,noatime "${SD_CARD}p1" /mnt/boot
@@ -119,6 +105,7 @@ printf "syslog=false\n" > /mnt/etc/xbps.d/xbps.conf
 {
   printf "ignorepkg=linux\n"
   printf "ignorepkg=linux-headers\n"
+  printf "ignorepkg=btrfs-progs\n"
   printf "ignorepkg=sudo\n"
 } > /mnt/etc/xbps.d/ignore.conf
 
@@ -137,7 +124,6 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   htop \
   inadyn \
   lsd \
-  lvm2 \
   nano \
   nftables \
   opendoas \
@@ -176,10 +162,6 @@ if [ -f /mnt/etc/default/libc-locales ]; then
   chroot /mnt /bin/xbps-reconfigure -f glibc-locales
 fi
 
-if [ -f /mnt/etc/lvm/lvm.conf ]; then
-  sed -i 's/# issue_discards = 0/issue_discards = 1/g' /mnt/etc/lvm/lvm.conf
-fi
-
 printf "server\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
@@ -190,7 +172,6 @@ printf "compress=zstd\n" > /mnt/etc/dracut.conf.d/compress.conf
 {
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
   printf "UUID=%s /boot vfat discard,noatime 0 2\n" "$BOOT_UUID"
-  printf "UUID=%s /home xfs discard,noatime 0 0\n" "$HOME_UUID"
 } > /mnt/etc/fstab
 
 {
@@ -256,5 +237,3 @@ chroot /mnt /bin/xbps-reconfigure -fa
 sync
 
 umount -R /mnt
-
-vgchange -an server

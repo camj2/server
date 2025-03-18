@@ -206,13 +206,6 @@ xbps-remove -yo
 xbps-remove -yO
 ```
 
-Extend root volume if needed:
-
-```
-lvextend -L +4G server/root
-xfs_growfs /
-```
-
 ### Unbound
 
 Check with:
