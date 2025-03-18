@@ -2,11 +2,20 @@
 
 set -e
 
+die() {
+  printf '%s: %s\n' "${0##*/}" "$*" >&2
+  exit 1
+}
+
 SSID="$1"
 PASS="$2"
 
-[ "$SSID" ]
-[ "$PASS" ]
+if [ -z "$SSID" ]; then
+  die "network required"
+fi
+if [ -z "$PASS" ]; then
+  die "password required"
+fi
 
 cat << EOF > "${SSID}.psk"
 [Security]
