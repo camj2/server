@@ -289,6 +289,12 @@ wg-gen -e wg.test.com:443 \
     -s 10.0.0.3:51820
 ```
 
+#### Many
+
+```
+wg-gen -e wg.test.com:443 $(seq 100)
+```
+
 ## LICENSE
 
 MIT
