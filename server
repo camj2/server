@@ -167,7 +167,7 @@ ln -fs "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
 printf 'kernel_cmdline="root=UUID=%s rootfstype=xfs rootflags=discard,noatime"\n' "$ROOT_UUID" > /mnt/etc/dracut.conf.d/server.conf
-printf "compress=zstd\n" > /mnt/etc/dracut.conf.d/compress.conf
+printf 'compress="zstd -19 -T0"\n' > /mnt/etc/dracut.conf.d/compress.conf
 
 {
   printf "tmpfs /tmp tmpfs nosuid,nodev,noatime 0 0\n"
