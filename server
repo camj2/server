@@ -66,45 +66,15 @@ blkdiscard -f "$SD_CARD"
 printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
-mkfs.vfat -n boot -F32 "${SD_CARD}p1"
-mkfs.f2fs -l root -O 'extra_attr,inode_checksum,sb_checksum,compression' "${SD_CARD}p2"
-ROOT_OPTS='compress_algorithm=lz4,compress_chksum,gc_merge,atgc,noatime'
-
-# note: does compress even do anything? xfs uses the same amount of space... (around 750 MB)
-# todo: try without compression
-
-# discard,lazytime
-
-# f2fs: note: zstd max level is 22
-
-# f2fs with "-i":
-# $ df -i -h -t f2fs
-# Filesystem     Inodes IUsed IFree IUse% Mounted on
-# /dev/mmcblk0p2   5.8M   27K  5.8M    1% /
-
-# f2fs without "-i":
-# $ df -i -h -t f2fs
-# Filesystem     Inodes IUsed IFree IUse% Mounted on
-# /dev/mmcblk0p2    13M   27K   13M    1% /
-
-# f2fs zstd:12:
-# $ ./excluded/server/rootfs/home/server/.bin/written
-# 964.76 MB
-
-# f2fs zstd:19:
-# $ ./excluded/server/rootfs/home/server/.bin/written
-# 965.24 MB
-
-# f2fs lz4:
-# $ ./excluded/server/rootfs/home/server/.bin/written
-# 964.96 MB
+mkfs.vfat -F32 -n boot "${SD_CARD}p1"
+mkfs.xfs -L root "${SD_CARD}p2"
 
 BOOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p1")
 ROOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p2")
 
 # mount
 
-mount -o "$ROOT_OPTS" "${SD_CARD}p2" /mnt
+mount -o discard,noatime "${SD_CARD}p2" /mnt
 
 mkdir /mnt/boot
 mount -o discard,noatime "${SD_CARD}p1" /mnt/boot
@@ -196,7 +166,7 @@ printf "server\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
-printf 'kernel_cmdline="root=UUID=%s rootfstype=f2fs rootflags=%s"\n' "$ROOT_UUID" "$ROOT_OPTS" > /mnt/etc/dracut.conf.d/server.conf
+printf 'kernel_cmdline="root=UUID=%s rootfstype=xfs rootflags=discard,noatime"\n' "$ROOT_UUID" > /mnt/etc/dracut.conf.d/server.conf
 printf 'compress="zstd -19 -T0"\n' > /mnt/etc/dracut.conf.d/compress.conf
 
 {
