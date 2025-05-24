@@ -88,7 +88,7 @@ ln -f wireguard/1-server.conf rootfs/etc/wireguard/wg0.conf
 Add the unbound config:
 
 ```
-ln -f wireguard/unbound.conf rootfs/etc/unbound/wireguard.conf
+ln -f wireguard/unbound.conf rootfs/etc/unbound.conf.d/wireguard.conf
 ```
 
 You can add the wireguard config to your phone with:
@@ -101,7 +101,7 @@ Then copy the rest of the wireguard config files to `/etc/wireguard` on your res
 
 <br>
 
-Example `/etc/unbound/wireguard.conf` file:
+Example `/etc/unbound.conf.d/wireguard.conf` file:
 
 ```
 local-data: "server   AAAA fd87:9b28:1e2f:b635::1"
@@ -144,7 +144,7 @@ wc -l < deny.conf
 Add the unbound config:
 
 ```
-ln -f deny.conf rootfs/etc/unbound/
+ln -f deny.conf rootfs/etc/unbound.conf.d/
 ```
 
 ### SSH
@@ -196,6 +196,10 @@ Check `date` until the clock is correct.
 ```
 
 ## Notes
+
+### DHCP
+
+Make sure to set a static ip address for your server in your router interface.
 
 ### Update
 
