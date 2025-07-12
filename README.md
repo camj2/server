@@ -305,7 +305,7 @@ docker container restart home-assistant
 
 `-s <host>:<port>`: peer endpoint (optional)
 
-`-p <port>`: listening port (ignored without `-s`, default: `51820`)
+`-p <port>`: listening port (used with `-s`, default: `51820`)
 
 `-k <int>`: keepalive (recommended value: `25`)
 
