@@ -247,6 +247,44 @@ Set a password if you plan on using a display and keyboard:
 passwd server
 ```
 
+### Docker
+
+Install Home Assistant:
+
+```
+xbps-install docker
+
+ln -s /etc/sv/docker /var/service/
+
+usermod -a -G docker server
+
+mkdir -p -m 700 /home-assistant
+
+docker run -d \
+  --privileged \
+  --network host \
+  --name home-assistant \
+  --restart unless-stopped \
+  -e TZ=UTC \
+  -v /home-assistant:/config \
+  ghcr.io/home-assistant/home-assistant:stable
+```
+
+Configure Home Assistant:
+
+`/home-assistant/configuration.yaml`:
+
+```
+http:
+  server_port: 80
+```
+
+Restart Home Assistant:
+
+```
+docker container restart home-assistant
+```
+
 ## `wg-gen`
 
 ### Flags
