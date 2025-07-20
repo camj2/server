@@ -15,7 +15,7 @@ MORE=
 
 ZONE='/usr/share/zoneinfo/UTC'
 
-REPO='https://repo-fastly.voidlinux.org/current/aarch64'
+REPO='https://repo-fastly.voidlinux.org/current/aarch64' # /nonfree
 
 while getopts a:z:r:f opt; do
   case $opt in
