@@ -213,7 +213,7 @@ chroot /mnt /bin/passwd -dl root
 chroot /mnt /bin/passwd -dl server
 
 {
-  printf "PermitRootLogin no\n"
+  printf "PermitRootLogin yes\n"
   printf "PasswordAuthentication no\n"
   printf "PrintLastLog no\n"
 } > /mnt/etc/ssh/sshd_config.d/login.conf
