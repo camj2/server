@@ -16,5 +16,3 @@ fi
 
 xbps-remove -yo
 xbps-remove -yO
-
-vkpurge rm all
