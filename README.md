@@ -285,6 +285,15 @@ Restart Home Assistant:
 docker container restart home-assistant
 ```
 
+Update Home Assistant:
+
+```
+docker container stop home-assistant
+docker container rm home-assistant
+docker run <cmd>
+docker system prune -a
+```
+
 ## `wg-gen`
 
 ### Flags
