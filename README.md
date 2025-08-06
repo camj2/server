@@ -288,6 +288,7 @@ docker container restart home-assistant
 Update Home Assistant:
 
 ```
+docker pull <img>
 docker container stop home-assistant
 docker container rm home-assistant
 docker run <cmd>
