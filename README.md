@@ -249,7 +249,7 @@ passwd server
 
 ### Docker
 
-Install Home Assistant:
+**Install**:
 
 ```
 xbps-install docker
@@ -270,7 +270,7 @@ docker run -d \
   ghcr.io/home-assistant/home-assistant:stable
 ```
 
-Configure Home Assistant:
+**Configure**:
 
 `/home-assistant/configuration.yaml`:
 
@@ -279,13 +279,19 @@ http:
   server_port: 80
 ```
 
-Restart Home Assistant:
+`/etc/nftables.conf`:
+
+```
+tcp dport 80 accept
+```
+
+**Restart**:
 
 ```
 docker container restart home-assistant
 ```
 
-Update Home Assistant:
+**Update**:
 
 ```
 docker pull <img>
