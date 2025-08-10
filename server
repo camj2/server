@@ -117,7 +117,6 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   base-system \
   bat \
   bind-utils \
-  binutils \
   bottom \
   chrony \
   curl \
