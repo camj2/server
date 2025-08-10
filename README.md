@@ -247,6 +247,28 @@ Set a password if you plan on using a display and keyboard:
 passwd server
 ```
 
+### Encryption
+
+<!-- https://wiki.archlinux.org/title/Fscrypt -->
+
+Setup with:
+
+```
+fscrypt setup
+```
+
+Encrypt with:
+
+```
+fscrypt encrypt <dir>
+```
+
+Unlock with:
+
+```
+fscrypt unlock <dir>
+```
+
 ### Docker
 
 **Install**:

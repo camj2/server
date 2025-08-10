@@ -67,14 +67,15 @@ printf ', 512M, c\n,' | sfdisk "$SD_CARD"
 udevadm settle
 
 mkfs.vfat -F32 -n boot "${SD_CARD}p1"
-mkfs.xfs -L root "${SD_CARD}p2"
+mkfs.f2fs -i -l root -O 'extra_attr,inode_checksum,sb_checksum,compression,encrypt' "${SD_CARD}p2"
+ROOT_OPTS='compress_algorithm=lz4,compress_chksum,gc_merge,atgc,noatime'
 
 BOOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p1")
 ROOT_UUID=$(blkid -s UUID -o value "${SD_CARD}p2")
 
 # mount
 
-mount -o discard,noatime "${SD_CARD}p2" /mnt
+mount -o "$ROOT_OPTS" "${SD_CARD}p2" /mnt
 
 mkdir /mnt/boot
 mount -o discard,noatime "${SD_CARD}p1" /mnt/boot
@@ -122,6 +123,7 @@ XBPS_ARCH=aarch64-musl xbps-install -Syu -r /mnt \
   curl \
   dracut \
   fastfetch \
+  fscrypt \
   htop \
   inadyn \
   lsd \
@@ -167,7 +169,7 @@ printf "server\n" > /mnt/etc/hostname
 ln -fs "$ZONE" /mnt/etc/localtime
 
 mkdir -p /mnt/etc/dracut.conf.d
-printf 'kernel_cmdline="root=UUID=%s rootfstype=xfs rootflags=discard,noatime"\n' "$ROOT_UUID" > /mnt/etc/dracut.conf.d/root.conf
+printf 'kernel_cmdline="root=UUID=%s rootfstype=f2fs rootflags=%s"\n' "$ROOT_UUID" "$ROOT_OPTS" > /mnt/etc/dracut.conf.d/root.conf
 printf 'compress="zstd -19 -T0"\n' > /mnt/etc/dracut.conf.d/zstd.conf
 
 {
