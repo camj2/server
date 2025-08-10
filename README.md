@@ -199,7 +199,7 @@ Check `date` until the clock is correct.
 
 ### DHCP
 
-Make sure to set a static ip address for your server in your router interface.
+Make sure to set a static ip address in your router interface.
 
 ### Update
 
