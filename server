@@ -100,7 +100,6 @@ mount --make-rslave /mnt/proc
 mkdir -p /mnt/etc/xbps.d
 
 printf "repository=%s\n" "$REPO" > /mnt/etc/xbps.d/00-repository-main.conf
-# printf "repository=%s/nonfree\n" "$REPO" > /mnt/etc/xbps.d/10-repository-nonfree.conf
 
 printf "syslog=false\n" > /mnt/etc/xbps.d/xbps.conf
 
